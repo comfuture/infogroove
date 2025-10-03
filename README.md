@@ -22,6 +22,16 @@ uv run infogroove -f examples/arc-circles/arc-circles.igd -i examples/arc-circle
 uv run infogroove -f examples/staggered-keywords/staggered-keywords.igd -i examples/staggered-keywords/staggered-keywords.json -o examples/staggered-keywords/staggered-keywords.svg
 ```
 
+## Example Gallery
+
+| Template | Preview |
+| --- | --- |
+| Horizontal Bars | ![Horizontal bars preview](examples/horizontal-bars/horizontal-bars.svg) |
+| Stat Cards | ![Stat cards preview](examples/stat-cards/stat-cards.svg) |
+| Blue Parallelogram Bands | ![Blue parallelograms preview](examples/blue-parallelograms/blue-parallelograms.svg) |
+| Arc Circles | ![Arc circles preview](examples/arc-circles/arc-circles.svg) |
+| Staggered Keywords | ![Staggered keywords preview](examples/staggered-keywords/staggered-keywords.svg) |
+
 ## Template Overview
 
 An IGD template is a JSON document with these top-level keys:
