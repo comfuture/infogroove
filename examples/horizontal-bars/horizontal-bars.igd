@@ -1,0 +1,85 @@
+{
+  "name": "Horizontal Bar Chart",
+  "description": "Renders a horizontal bar chart with labels and values.",
+  "screen": {
+    "width": 960,
+    "height": 540
+  },
+  "styles": {
+    "margin": 64,
+    "barHeight": 38,
+    "barGap": 20,
+    "valueGap": 12,
+    "fontFamily": "Inter, Arial, sans-serif",
+    "background": "#ffffff",
+    "textColor": "#111827",
+    "valueColor": "#2563eb",
+    "colors": [
+      "#4338ca",
+      "#2563eb",
+      "#10b981",
+      "#f97316",
+      "#db2777"
+    ]
+  },
+  "numElementsRange": [1, 12],
+  "formulas": {
+    "colorIndex": "index % styles.colors.length",
+    "barColor": "styles.colors[colorIndex]",
+    "barX": "styles.margin",
+    "spanWidth": "screenWidth - 2 * styles.margin",
+    "barWidth": "spanWidth * (value / maxValue)",
+    "barY": "styles.margin + index * (styles.barHeight + styles.barGap)",
+    "labelY": "barY + (styles.barHeight / 2)",
+    "valueX": "barX + barWidth + styles.valueGap"
+  },
+  "elements": [
+    {
+      "type": "rect",
+      "scope": "canvas",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{styles.background}"
+      }
+    },
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "{barX}",
+        "y": "{barY}",
+        "width": "{barWidth}",
+        "height": "{styles.barHeight}",
+        "fill": "{barColor}",
+        "rx": "8",
+        "ry": "8"
+      }
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{barX}",
+        "y": "{labelY}",
+        "fill": "{styles.textColor}",
+        "fontSize": "20",
+        "fontFamily": "{styles.fontFamily}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{label}"
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{valueX}",
+        "y": "{labelY}",
+        "fill": "{styles.valueColor}",
+        "fontSize": "18",
+        "fontFamily": "{styles.fontFamily}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{value}"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+[project]
+name = "infogroove"
+version = "0.1.0"
+description = "Programmable infographic generation powered by sympy and svg.py"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "svg-py>=1.9.1",
+    "sympy>=1.14.0",
+]
+
+[project.scripts]
+infogroove = "infogroove.cli:main"
+
+[tool.uv]
+package = true

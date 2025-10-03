@@ -1,0 +1,113 @@
+{
+  "name": "Stat Cards",
+  "description": "Displays KPI cards with coloured accents.",
+  "screen": {
+    "width": 1024,
+    "height": 600
+  },
+  "styles": {
+    "margin": 48,
+    "cardWidth": 280,
+    "cardHeight": 140,
+    "cardGap": 24,
+    "background": "#0f172a",
+    "cardBackground": "#1e293b",
+    "titleColor": "#e2e8f0",
+    "valueColor": "#f8fafc",
+    "deltaColor": "#94a3b8",
+    "fontFamily": "Inter, Arial, sans-serif",
+    "accentColors": [
+      "#38bdf8",
+      "#34d399",
+      "#f97316",
+      "#a855f7"
+    ]
+  },
+  "numElementsRange": [1, 8],
+  "formulas": {
+    "cardsPerRow": "max(1, min(total, 3))",
+    "row": "index // cardsPerRow",
+    "column": "index % cardsPerRow",
+    "cardX": "styles.margin + column * (styles.cardWidth + styles.cardGap)",
+    "cardY": "styles.margin + row * (styles.cardHeight + styles.cardGap)",
+    "accentColor": "styles.accentColors[index % styles.accentColors.length]",
+    "titleX": "cardX + 20",
+    "titleY": "cardY + 36",
+    "valueX": "cardX + 20",
+    "valueY": "cardY + 82",
+    "deltaX": "cardX + 20",
+    "deltaY": "cardY + 112"
+  },
+  "elements": [
+    {
+      "type": "rect",
+      "scope": "canvas",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{styles.background}"
+      }
+    },
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "{cardX}",
+        "y": "{cardY}",
+        "width": "{styles.cardWidth}",
+        "height": "{styles.cardHeight}",
+        "fill": "{styles.cardBackground}",
+        "rx": "20"
+      }
+    },
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "{cardX}",
+        "y": "{cardY}",
+        "width": "6",
+        "height": "{styles.cardHeight}",
+        "fill": "{accentColor}",
+        "rx": "6"
+      }
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{titleX}",
+        "y": "{titleY}",
+        "fill": "{styles.titleColor}",
+        "fontSize": "18",
+        "fontFamily": "{styles.fontFamily}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{title}"
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{valueX}",
+        "y": "{valueY}",
+        "fill": "{styles.valueColor}",
+        "fontSize": "40",
+        "fontFamily": "{styles.fontFamily}",
+        "fontWeight": "700",
+        "dominantBaseline": "middle"
+      },
+      "text": "{value}"
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{deltaX}",
+        "y": "{deltaY}",
+        "fill": "{styles.deltaColor}",
+        "fontSize": "16",
+        "fontFamily": "{styles.fontFamily}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{delta}"
+    }
+  ]
+}
