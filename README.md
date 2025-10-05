@@ -22,6 +22,21 @@ uv run infogroove -f examples/arc-circles/arc-circles.igd -i examples/arc-circle
 uv run infogroove -f examples/staggered-keywords/staggered-keywords.igd -i examples/staggered-keywords/staggered-keywords.json -o examples/staggered-keywords/staggered-keywords.svg
 ```
 
+## Running Tests
+
+Install development dependencies and execute the test suite with pytest:
+
+```bash
+uv sync --extra dev
+uv run --extra dev pytest
+```
+
+To measure coverage locally you can add the ``--cov`` flag:
+
+```bash
+uv run --extra dev pytest --cov=infogroove --cov=tests
+```
+
 ## Example Gallery
 
 | Template | Preview |
