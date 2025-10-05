@@ -1,0 +1,100 @@
+import pytest
+
+from infogroove.exceptions import DataValidationError, RenderError
+from infogroove.models import ElementSpec, ScreenSpec, TemplateSpec
+from infogroove.renderer import InfographicRenderer
+
+
+@pytest.fixture
+def sample_template(tmp_path):
+    return TemplateSpec(
+        source_path=tmp_path / "template.igd",
+        screen=ScreenSpec(width=200, height=100),
+        elements=[
+            ElementSpec(
+                type="rect",
+                attributes={"width": "{screen.width}", "height": "10", "class": "chart"},
+                scope="canvas",
+            ),
+            ElementSpec(
+                type="text",
+                attributes={"x": "{index}", "y": "20", "fontSize": "12"},
+                text="{label}: {double}",
+                scope="item",
+            ),
+        ],
+        formulas={"double": "value * 2", "label": "item['label']"},
+        styles={"fill": "#000"},
+        num_elements_range=(1, 5),
+    )
+
+
+def test_render_combines_canvas_and_items(sample_template):
+    renderer = InfographicRenderer(sample_template)
+    svg_markup = renderer.render([
+        {"label": "A", "value": 3},
+        {"label": "B", "value": 4},
+    ])
+
+    assert "class=\"chart\"" in svg_markup
+    assert "A: 6" in svg_markup
+    assert "B: 8" in svg_markup
+    assert "font-size=\"12\"" in svg_markup  # camelCase attributes converted to kebab in svg.py
+
+
+def test_build_base_context_computes_metrics(sample_template):
+    renderer = InfographicRenderer(sample_template)
+    dataset = [
+        {"label": "A", "value": 5},
+        {"label": "B", "value": 15},
+    ]
+
+    context = renderer._build_base_context(dataset)
+
+    assert context["screenWidth"] == 200
+    assert context["styles"] == {"fill": "#000"}
+    assert context["values"] == [5, 15]
+    assert context["maxValue"] == 15
+    assert context["averageValue"] == 10
+
+
+def test_build_item_context_infers_defaults(sample_template):
+    renderer = InfographicRenderer(sample_template)
+    base = renderer._build_base_context([{"value": 2, "text": "Hello"}])
+
+    context = renderer._build_item_context(base, {"value": 2, "text": "Hello"}, index=0, total=1)
+
+    assert context["index"] == 0
+    assert context["oneBasedIndex"] == 1
+    assert context["label"] == "Hello"
+    assert context["value"] == 2
+
+
+def test_validate_data_checks_sequence(sample_template):
+    renderer = InfographicRenderer(sample_template)
+
+    with pytest.raises(DataValidationError, match="sequence of mappings"):
+        renderer._validate_data({"not": "a sequence"})
+
+    with pytest.raises(DataValidationError, match="must be a mapping"):
+        renderer._validate_data([{"ok": 1}, 2])
+
+    with pytest.raises(DataValidationError, match="at least 1"):
+        renderer._validate_data([])
+
+    with pytest.raises(DataValidationError, match="at most 5"):
+        renderer._validate_data([{"value": 1}] * 6)
+
+
+def test_append_rejects_unknown_element(sample_template):
+    bad_template = TemplateSpec(
+        source_path=sample_template.source_path,
+        screen=sample_template.screen,
+        elements=[ElementSpec(type="unknown", attributes={})],
+        formulas={},
+        styles={},
+    )
+    renderer = InfographicRenderer(bad_template)
+
+    with pytest.raises(RenderError, match="Unsupported element type"):
+        renderer.render([{"value": 1}])

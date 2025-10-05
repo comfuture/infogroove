@@ -9,6 +9,9 @@ dependencies = [
     "sympy>=1.14.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
 [project.scripts]
 infogroove = "infogroove.cli:main"
 
