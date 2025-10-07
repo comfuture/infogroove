@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping, Sequence
 
+from jsonschema import ValidationError as JSONSchemaValidationError
+from jsonschema import SchemaError
+from jsonschema import validate as validate_jsonschema
+
 from svg import Circle, Ellipse, G, Line, Path, Polygon, Polyline, Rect, SVG, Text
 
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
@@ -167,6 +171,17 @@ class InfographicRenderer:
             raise DataValidationError(f"Template requires at least {minimum} items (received {count})")
         if maximum is not None and count > maximum:
             raise DataValidationError(f"Template accepts at most {maximum} items (received {count})")
+
+        schema = self._template.schema
+        if schema is not None:
+            try:
+                validate_jsonschema(dataset, schema)
+            except JSONSchemaValidationError as exc:
+                raise DataValidationError(
+                    f"Input data does not satisfy the template schema: {exc.message}"
+                ) from exc
+            except SchemaError as exc:
+                raise DataValidationError("Template schema definition is invalid") from exc
         return dataset
 
     @staticmethod
