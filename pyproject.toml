@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "svg-py>=1.9.1",
     "sympy>=1.14.0",
+    "jsonschema>=4.23.0",
 ]
 
 [project.optional-dependencies]

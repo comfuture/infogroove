@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from infogroove.exceptions import DataValidationError, RenderError
@@ -98,3 +100,24 @@ def test_append_rejects_unknown_element(sample_template):
 
     with pytest.raises(RenderError, match="Unsupported element type"):
         renderer.render([{"value": 1}])
+
+
+def test_validate_data_uses_json_schema(sample_template):
+    template_with_schema = replace(
+        sample_template,
+        schema={
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"value": {"type": "number"}},
+                "required": ["value"],
+            },
+        },
+    )
+    renderer = InfographicRenderer(template_with_schema)
+
+    valid = renderer._validate_data([{"value": 3}])
+    assert valid == [{"value": 3}]
+
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data([{"value": "bad"}])
