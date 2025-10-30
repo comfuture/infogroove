@@ -99,6 +99,26 @@ when the template definition is already in memory as a string. Both helpers
 return an `InfogrooveRenderer`, exposing the parsed template via the
 `template` property for metadata inspection.
 
+When you already have the JSON structure as a Python mapping, instantiate an
+infographic directly with the `Infogroove` factory:
+
+```python
+from infogroove import Infogroove
+
+infographic = Infogroove({
+    "variables": {
+        "canvas": {"width": 200, "height": 40},
+        "gap": 10,
+    },
+    "formulas": {"x": "index * gap"},
+    "elements": [
+        {"type": "circle", "attributes": {"cx": "{x}", "cy": "20", "r": "5"}},
+    ],
+})
+
+svg_inline = infographic.render([{}] * 10)
+```
+
 ## Developing Templates
 
 - Formulas can reference global values (`canvas.width`, `radius`),
