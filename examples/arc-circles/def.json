@@ -1,11 +1,11 @@
 {
   "name": "Arc Positioned Circles",
   "description": "Places circular milestones along an arc projected from below the viewport.",
-  "screen": {
-    "width": 1280,
-    "height": 640
-  },
-  "styles": {
+  "variables": {
+    "canvas": {
+      "width": 1280,
+      "height": 640
+    },
     "arcSpan": 140,
     "startAngle": 20,
     "radius": 460,
@@ -24,15 +24,15 @@
     ]
   },
   "formulas": {
-    "centerX": "screenWidth / 2",
-    "centerY": "screenHeight + styles.arcOffset",
-    "step": "styles.arcSpan / max(total - 1, 1)",
-    "angle": "styles.startAngle + index * step",
+    "centerX": "canvas.width / 2",
+    "centerY": "canvas.height + arcOffset",
+    "step": "arcSpan / max(total - 1, 1)",
+    "angle": "startAngle + index * step",
     "angleRad": "angle * Math.pi / 180",
-    "cx": "centerX + styles.radius * Math.cos(angleRad)",
-    "cy": "centerY - styles.radius * Math.sin(angleRad)",
-    "fillColor": "styles.palette[index % styles.palette.length]",
-    "labelY": "cy - styles.radiusLabelOffset"
+    "cx": "centerX + radius * Math.cos(angleRad)",
+    "cy": "centerY - radius * Math.sin(angleRad)",
+    "fillColor": "palette[index % palette.length]",
+    "labelY": "cy - radiusLabelOffset"
   },
   "elements": [
     {
@@ -51,7 +51,7 @@
       "attributes": {
         "cx": "{cx}",
         "cy": "{cy}",
-        "r": "{styles.bubbleRadius}",
+        "r": "{bubbleRadius}",
         "fill": "{fillColor}",
         "opacity": "0.92"
       }
@@ -61,8 +61,8 @@
       "attributes": {
         "x": "{cx}",
         "y": "{labelY}",
-        "fill": "{styles.labelColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{labelColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "22",
         "fontWeight": "600",
         "textAnchor": "middle"
@@ -74,8 +74,8 @@
       "attributes": {
         "x": "{cx}",
         "y": "{cy} + 6",
-        "fill": "{styles.valueColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{valueColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "20",
         "textAnchor": "middle",
         "dominantBaseline": "middle"

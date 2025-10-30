@@ -1,11 +1,11 @@
 {
   "name": "Horizontal Bar Chart",
   "description": "Renders a horizontal bar chart with labels and values.",
-  "screen": {
-    "width": 960,
-    "height": 540
-  },
-  "styles": {
+  "variables": {
+    "canvas": {
+      "width": 960,
+      "height": 540
+    },
     "margin": 64,
     "barHeight": 38,
     "barGap": 20,
@@ -24,14 +24,14 @@
   },
   "numElementsRange": [1, 12],
   "formulas": {
-    "colorIndex": "index % styles.colors.length",
-    "barColor": "styles.colors[colorIndex]",
-    "barX": "styles.margin",
-    "spanWidth": "screenWidth - 2 * styles.margin",
+    "colorIndex": "index % colors.length",
+    "barColor": "colors[colorIndex]",
+    "barX": "margin",
+    "spanWidth": "canvas.width - 2 * margin",
     "barWidth": "spanWidth * (value / maxValue)",
-    "barY": "styles.margin + index * (styles.barHeight + styles.barGap)",
-    "labelY": "barY + (styles.barHeight / 2)",
-    "valueX": "barX + barWidth + styles.valueGap"
+    "barY": "margin + index * (barHeight + barGap)",
+    "labelY": "barY + (barHeight / 2)",
+    "valueX": "barX + barWidth + valueGap"
   },
   "elements": [
     {
@@ -42,7 +42,7 @@
         "y": "0",
         "width": "100%",
         "height": "100%",
-        "fill": "{styles.background}"
+        "fill": "{background}"
       }
     },
     {
@@ -51,7 +51,7 @@
         "x": "{barX}",
         "y": "{barY}",
         "width": "{barWidth}",
-        "height": "{styles.barHeight}",
+        "height": "{barHeight}",
         "fill": "{barColor}",
         "rx": "8",
         "ry": "8"
@@ -62,9 +62,9 @@
       "attributes": {
         "x": "{barX}",
         "y": "{labelY}",
-        "fill": "{styles.textColor}",
+        "fill": "{textColor}",
         "fontSize": "20",
-        "fontFamily": "{styles.fontFamily}",
+        "fontFamily": "{fontFamily}",
         "dominantBaseline": "middle"
       },
       "text": "{label}"
@@ -74,9 +74,9 @@
       "attributes": {
         "x": "{valueX}",
         "y": "{labelY}",
-        "fill": "{styles.valueColor}",
+        "fill": "{valueColor}",
         "fontSize": "18",
-        "fontFamily": "{styles.fontFamily}",
+        "fontFamily": "{fontFamily}",
         "dominantBaseline": "middle"
       },
       "text": "{value}"
