@@ -134,3 +134,22 @@ def test_infogroove_factory_returns_renderer(sample_template):
 
     assert isinstance(renderer, InfogrooveRenderer)
     assert renderer.template is sample_template
+
+
+def test_infogroove_factory_accepts_mapping():
+    renderer = Infogroove(
+        {
+            "variables": {
+                "canvas": {"width": 120, "height": 40},
+                "gap": 10,
+            },
+            "formulas": {"x": "index * gap"},
+            "elements": [
+                {"type": "circle", "attributes": {"cx": "{x}", "cy": "20", "r": "5"}},
+            ],
+        }
+    )
+
+    markup = renderer.render([{}] * 3)
+
+    assert markup.count("<circle") == 3
