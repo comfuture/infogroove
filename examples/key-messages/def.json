@@ -42,20 +42,13 @@
     "cardY": "bottomY",
     "leadTitleX": "leadX + 40",
     "leadTitleY": "leadY + 110",
-    "leadSubtitleBaseY": "leadY + 148",
+    "leadSubtitleY": "leadY + 148",
     "cardTitleX": "cardX + 28",
     "cardTitleY": "cardY + 82",
-    "cardSubtitleBaseY": "cardY + 132",
-    "subtitleWrapWidth": "36 if index == 0 else 24",
-    "subtitleLines": "textwrap.wrap((subtitle or '').strip(), width=subtitleWrapWidth)",
-    "subtitleLine1": "subtitleLines[0] if len(subtitleLines) > 0 else ''",
-    "subtitleLine2": "subtitleLines[1] if len(subtitleLines) > 1 else ''",
-    "subtitleLine3": "subtitleLines[2] if len(subtitleLines) > 2 else ''",
-    "subtitleLine2Display": "'inline' if len(subtitleLines) > 1 else 'none'",
-    "subtitleLine3Display": "'inline' if len(subtitleLines) > 2 else 'none'",
+    "cardSubtitleY": "cardY + 132",
     "subtitleClipId": "f'keyMsgClip_{index}'",
     "subtitleClipX": "leadTitleX if index == 0 else cardTitleX",
-    "subtitleClipY": "leadSubtitleBaseY - 4 if index == 0 else cardSubtitleBaseY - 4",
+    "subtitleClipY": "leadSubtitleY - 4 if index == 0 else cardSubtitleY - 4",
     "subtitleClipWidth": "(leadWidth - 88) if index == 0 else max(cardWidth - 56, 0)",
     "subtitleClipHeight": "(leadHeight - 120) if index == 0 else max(cardHeight - 140, 0)"
   },
@@ -179,53 +172,18 @@
       "text": "{title}"
     },
     {
-      "type": "g",
+      "type": "text",
       "attributes": {
-        "clip-path": "url(#{subtitleClipId})",
-        "display": "{leadDisplay}"
+        "x": "{leadTitleX}",
+        "y": "{leadSubtitleY}",
+        "fill": "{leadTextColor}",
+        "fontSize": "{leadSubtitleSize}",
+        "fontFamily": "{fontFamily}",
+        "dominantBaseline": "hanging",
+        "display": "{leadDisplay}",
+        "clip-path": "url(#{subtitleClipId})"
       },
-      "children": [
-        {
-          "type": "text",
-          "attributes": {
-            "x": "{leadTitleX}",
-            "y": "{leadSubtitleBaseY}",
-            "fill": "{leadTextColor}",
-            "fontSize": "{leadSubtitleSize}",
-            "fontFamily": "{fontFamily}",
-            "dominantBaseline": "hanging",
-            "display": "{leadDisplay}"
-          },
-          "children": [
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{leadTitleX}",
-                "dy": "0"
-              },
-              "text": "{subtitleLine1}"
-            },
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{leadTitleX}",
-                "dy": "1.3em",
-                "display": "{subtitleLine2Display}"
-              },
-              "text": "{subtitleLine2}"
-            },
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{leadTitleX}",
-                "dy": "1.3em",
-                "display": "{subtitleLine3Display}"
-              },
-              "text": "{subtitleLine3}"
-            }
-          ]
-        }
-      ]
+      "text": "{subtitle}"
     },
     {
       "type": "rect",
@@ -254,53 +212,18 @@
       "text": "{title}"
     },
     {
-      "type": "g",
+      "type": "text",
       "attributes": {
-        "clip-path": "url(#{subtitleClipId})",
-        "display": "{nonLeadDisplay}"
+        "x": "{cardTitleX}",
+        "y": "{cardSubtitleY}",
+        "fill": "{secondaryTextColor}",
+        "fontSize": "{cardSubtitleSize}",
+        "fontFamily": "{fontFamily}",
+        "dominantBaseline": "hanging",
+        "display": "{nonLeadDisplay}",
+        "clip-path": "url(#{subtitleClipId})"
       },
-      "children": [
-        {
-          "type": "text",
-          "attributes": {
-            "x": "{cardTitleX}",
-            "y": "{cardSubtitleBaseY}",
-            "fill": "{secondaryTextColor}",
-            "fontSize": "{cardSubtitleSize}",
-            "fontFamily": "{fontFamily}",
-            "dominantBaseline": "hanging",
-            "display": "{nonLeadDisplay}"
-          },
-          "children": [
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{cardTitleX}",
-                "dy": "0"
-              },
-              "text": "{subtitleLine1}"
-            },
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{cardTitleX}",
-                "dy": "1.25em",
-                "display": "{subtitleLine2Display}"
-              },
-              "text": "{subtitleLine2}"
-            },
-            {
-              "type": "tspan",
-              "attributes": {
-                "x": "{cardTitleX}",
-                "dy": "1.25em",
-                "display": "{subtitleLine3Display}"
-              },
-              "text": "{subtitleLine3}"
-            }
-          ]
-        }
-      ]
+      "text": "{subtitle}"
     }
   ]
 }
