@@ -57,8 +57,9 @@ A template definition is a JSON document with these top-level keys:
   values such as `palette`, `margin`, or `fontFamily`. Variables are exposed in
   the rendering context both under `variables` and as direct names, so a value
   declared as `variables.radius` is available as `{radius}`.
-- `formulas`: Named expressions evaluated with sympy. Results are merged into
-  the rendering context for placeholder substitution.
+- `formulas` (optional): Named expressions evaluated with sympy. Results are
+  merged into the rendering context for placeholder substitution. Skip the
+  block entirely when inline expressions are sufficient.
 - `elements`: A list of SVG element descriptors. Each descriptor has a `type`,
   attribute map, optional `text` content, and an optional `scope` (`canvas` or
   `item`). Canvas elements are rendered once; item elements repeat for each
@@ -66,8 +67,10 @@ A template definition is a JSON document with these top-level keys:
 - `numElementsRange` (optional): Expected minimum and maximum number of data
   items.
 
-Placeholder syntax uses `{path.to.value}` lookups resolved against the current
-context (variables, data fields, and formula results).
+Placeholder syntax supports both `{path.to.value}` lookups and inline Python
+expressions such as `{index * 10}` or `{canvas.width / 2}`. Expressions are
+evaluated inside the same safe context exposed to formulas (variables, data
+fields, derived metrics, and formula results).
 
 ## CLI Options
 
@@ -127,5 +130,6 @@ svg_inline = infographic.render([{}] * 10)
   `averageValue`).
 - Place reusable constants (including canvas dimensions) under `variables`.
 - Provide `scope: "canvas"` for static backgrounds and decorations.
-- Keep attribute expressions simple; if you need math, create a formula and use
-  its placeholder in the attribute map.
+- Choose between inline expressions and formulas depending on reuse: inline
+  placeholders handle quick math (`{index * 10}`), while formulas remain useful
+  for shared or multi-step calculations.

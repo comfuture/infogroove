@@ -79,6 +79,23 @@ def test_loads_accepts_raw_strings(tmp_path):
     assert renderer.template.canvas.width == 800
 
 
+def test_parse_template_treats_missing_formulas_as_empty(tmp_path):
+    payload = make_template_payload()
+    payload.pop("formulas")
+
+    spec = _parse_template(tmp_path / "def.json", payload)
+
+    assert spec.formulas == {}
+
+
+def test_parse_template_treats_none_formulas_as_empty(tmp_path):
+    payload = make_template_payload(formulas=None)
+
+    spec = _parse_template(tmp_path / "def.json", payload)
+
+    assert spec.formulas == {}
+
+
 def test_parse_template_requires_canvas_dimensions(tmp_path):
     payload = make_template_payload()
     payload["variables"]["canvas"] = {"width": 400}
