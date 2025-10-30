@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 
 from infogroove.exceptions import TemplateError
-from infogroove.template_loader import _parse_template, load_template
+from infogroove.loader import _parse_template, load, load_path, loads
+from infogroove.renderer import InfographicRenderer
 
 
 def make_template_payload(**overrides):
@@ -36,11 +37,14 @@ def make_template_payload(**overrides):
     return payload
 
 
-def test_load_template_reads_and_parses(tmp_path):
+def test_load_path_returns_renderer(tmp_path):
     template_path = tmp_path / "def.json"
     template_path.write_text(json.dumps(make_template_payload()), encoding="utf-8")
 
-    template = load_template(template_path)
+    renderer = load_path(template_path)
+
+    assert isinstance(renderer, InfographicRenderer)
+    template = renderer.template
 
     assert template.source_path == template_path
     assert template.canvas.width == 800
@@ -56,6 +60,23 @@ def test_load_template_reads_and_parses(tmp_path):
         "description": "Demo",
         "version": "1.0",
     }
+
+
+def test_load_accepts_file_objects(tmp_path):
+    template_path = tmp_path / "def.json"
+    template_path.write_text(json.dumps(make_template_payload()), encoding="utf-8")
+
+    with template_path.open(encoding="utf-8") as handle:
+        renderer = load(handle)
+
+    assert renderer.template.source_path == template_path
+
+
+def test_loads_accepts_raw_strings(tmp_path):
+    payload = json.dumps(make_template_payload())
+    renderer = loads(payload, source=tmp_path / "def.json")
+
+    assert renderer.template.canvas.width == 800
 
 
 def test_parse_template_requires_canvas_dimensions(tmp_path):
