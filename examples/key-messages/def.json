@@ -1,0 +1,306 @@
+{
+  "name": "Key Messages",
+  "description": "Highlights a primary message above supporting messages.",
+  "variables": {
+    "canvas": {
+      "width": 1024,
+      "height": 576
+    },
+    "margin": 48,
+    "gap": 32,
+    "background": "#120613",
+    "cardRadius": 28,
+    "fontFamily": "'Inter', 'Pretendard', Arial, sans-serif",
+    "leadGradientStart": "#ff2d95",
+    "leadGradientEnd": "#b5147a",
+    "cardGradientStart": "#ff9ad1",
+    "cardGradientEnd": "#ff68b3",
+    "leadTextColor": "#fff5fc",
+    "secondaryTextColor": "#250014",
+    "leadTitleSize": 48,
+    "leadSubtitleSize": 26,
+    "cardTitleSize": 24,
+    "cardSubtitleSize": 18
+  },
+  "numElementsRange": [1, 6],
+  "formulas": {
+    "halfHeight": "canvasHeight / 2",
+    "sectionGap": "gap",
+    "leadWidth": "canvasWidth - margin * 2",
+    "leadX": "margin",
+    "leadY": "margin",
+    "leadHeight": "halfHeight - margin - sectionGap / 2",
+    "leadDisplay": "'inline' if index == 0 else 'none'",
+    "nonLeadDisplay": "'inline' if index > 0 else 'none'",
+    "bottomY": "halfHeight + sectionGap / 2",
+    "bottomHeight": "canvasHeight - bottomY - margin",
+    "nonLeadCount": "max(total - 1, 1)",
+    "nonLeadIndex": "max(index - 1, 0)",
+    "cardWidth": "((canvasWidth - margin * 2) - gap * (nonLeadCount - 1)) / nonLeadCount if index > 0 else 0",
+    "cardHeight": "bottomHeight",
+    "cardX": "margin + nonLeadIndex * (cardWidth + gap)",
+    "cardY": "bottomY",
+    "leadTitleX": "leadX + 40",
+    "leadTitleY": "leadY + 110",
+    "leadSubtitleBaseY": "leadY + 148",
+    "cardTitleX": "cardX + 28",
+    "cardTitleY": "cardY + 82",
+    "cardSubtitleBaseY": "cardY + 132",
+    "subtitleWrapWidth": "36 if index == 0 else 24",
+    "subtitleLines": "textwrap.wrap((subtitle or '').strip(), width=subtitleWrapWidth)",
+    "subtitleLine1": "subtitleLines[0] if len(subtitleLines) > 0 else ''",
+    "subtitleLine2": "subtitleLines[1] if len(subtitleLines) > 1 else ''",
+    "subtitleLine3": "subtitleLines[2] if len(subtitleLines) > 2 else ''",
+    "subtitleLine2Display": "'inline' if len(subtitleLines) > 1 else 'none'",
+    "subtitleLine3Display": "'inline' if len(subtitleLines) > 2 else 'none'",
+    "subtitleClipId": "f'keyMsgClip_{index}'",
+    "subtitleClipX": "leadTitleX if index == 0 else cardTitleX",
+    "subtitleClipY": "leadSubtitleBaseY - 4 if index == 0 else cardSubtitleBaseY - 4",
+    "subtitleClipWidth": "(leadWidth - 88) if index == 0 else max(cardWidth - 56, 0)",
+    "subtitleClipHeight": "(leadHeight - 120) if index == 0 else max(cardHeight - 140, 0)"
+  },
+  "elements": [
+    {
+      "type": "rect",
+      "scope": "canvas",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{background}"
+      }
+    },
+    {
+      "type": "defs",
+      "scope": "canvas",
+      "children": [
+        {
+          "type": "linearGradient",
+          "scope": "canvas",
+          "attributes": {
+            "id": "leadGradient",
+            "x1": "0%",
+            "y1": "0%",
+            "x2": "0%",
+            "y2": "100%"
+          },
+          "children": [
+            {
+              "type": "stop",
+              "scope": "canvas",
+              "attributes": {
+                "offset": "0%",
+                "stopColor": "{leadGradientStart}"
+              }
+            },
+            {
+              "type": "stop",
+              "scope": "canvas",
+              "attributes": {
+                "offset": "100%",
+                "stopColor": "{leadGradientEnd}"
+              }
+            }
+          ]
+        },
+        {
+          "type": "linearGradient",
+          "scope": "canvas",
+          "attributes": {
+            "id": "cardGradient",
+            "x1": "0%",
+            "y1": "0%",
+            "x2": "0%",
+            "y2": "100%"
+          },
+          "children": [
+            {
+              "type": "stop",
+              "scope": "canvas",
+              "attributes": {
+                "offset": "0%",
+                "stopColor": "{cardGradientStart}"
+              }
+            },
+            {
+              "type": "stop",
+              "scope": "canvas",
+              "attributes": {
+                "offset": "100%",
+                "stopColor": "{cardGradientEnd}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "clipPath",
+      "attributes": {
+        "id": "{subtitleClipId}"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{subtitleClipX}",
+            "y": "{subtitleClipY}",
+            "width": "{subtitleClipWidth}",
+            "height": "{subtitleClipHeight}"
+          }
+        }
+      ]
+    },
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "{leadX}",
+        "y": "{leadY}",
+        "width": "{leadWidth}",
+        "height": "{leadHeight}",
+        "rx": "{cardRadius}",
+        "fill": "url(#leadGradient)",
+        "display": "{leadDisplay}"
+      }
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{leadTitleX}",
+        "y": "{leadTitleY}",
+        "fill": "{leadTextColor}",
+        "fontSize": "{leadTitleSize}",
+        "fontFamily": "{fontFamily}",
+        "fontWeight": "700",
+        "display": "{leadDisplay}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{title}"
+    },
+    {
+      "type": "g",
+      "attributes": {
+        "clip-path": "url(#{subtitleClipId})",
+        "display": "{leadDisplay}"
+      },
+      "children": [
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{leadTitleX}",
+            "y": "{leadSubtitleBaseY}",
+            "fill": "{leadTextColor}",
+            "fontSize": "{leadSubtitleSize}",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "hanging",
+            "display": "{leadDisplay}"
+          },
+          "children": [
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{leadTitleX}",
+                "dy": "0"
+              },
+              "text": "{subtitleLine1}"
+            },
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{leadTitleX}",
+                "dy": "1.3em",
+                "display": "{subtitleLine2Display}"
+              },
+              "text": "{subtitleLine2}"
+            },
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{leadTitleX}",
+                "dy": "1.3em",
+                "display": "{subtitleLine3Display}"
+              },
+              "text": "{subtitleLine3}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "{cardX}",
+        "y": "{cardY}",
+        "width": "{cardWidth}",
+        "height": "{cardHeight}",
+        "rx": "{cardRadius}",
+        "fill": "url(#cardGradient)",
+        "display": "{nonLeadDisplay}"
+      }
+    },
+    {
+      "type": "text",
+      "attributes": {
+        "x": "{cardTitleX}",
+        "y": "{cardTitleY}",
+        "fill": "{secondaryTextColor}",
+        "fontSize": "{cardTitleSize}",
+        "fontFamily": "{fontFamily}",
+        "fontWeight": "600",
+        "display": "{nonLeadDisplay}",
+        "dominantBaseline": "middle"
+      },
+      "text": "{title}"
+    },
+    {
+      "type": "g",
+      "attributes": {
+        "clip-path": "url(#{subtitleClipId})",
+        "display": "{nonLeadDisplay}"
+      },
+      "children": [
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{cardTitleX}",
+            "y": "{cardSubtitleBaseY}",
+            "fill": "{secondaryTextColor}",
+            "fontSize": "{cardSubtitleSize}",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "hanging",
+            "display": "{nonLeadDisplay}"
+          },
+          "children": [
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{cardTitleX}",
+                "dy": "0"
+              },
+              "text": "{subtitleLine1}"
+            },
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{cardTitleX}",
+                "dy": "1.25em",
+                "display": "{subtitleLine2Display}"
+              },
+              "text": "{subtitleLine2}"
+            },
+            {
+              "type": "tspan",
+              "attributes": {
+                "x": "{cardTitleX}",
+                "dy": "1.25em",
+                "display": "{subtitleLine3Display}"
+              },
+              "text": "{subtitleLine3}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

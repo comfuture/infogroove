@@ -25,6 +25,7 @@ class ElementSpec:
     attributes: MutableMapping[str, str] = field(default_factory=dict)
     text: str | None = None
     scope: Scope = "item"
+    children: list["ElementSpec"] = field(default_factory=list)
 
 
 @dataclass(slots=True)

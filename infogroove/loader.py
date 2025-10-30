@@ -131,4 +131,13 @@ def _parse_element(entry: Any) -> ElementSpec:
     if scope not in {"item", "canvas"}:
         raise TemplateError("Element scope must be either 'item' or 'canvas'")
     attributes = {key: str(value) for key, value in attributes_block.items()}
-    return ElementSpec(type=element_type, attributes=attributes, text=text, scope=scope)
+
+    children_block = entry.get("children", [])
+    if children_block is None:
+        children = []
+    elif isinstance(children_block, list):
+        children = [_parse_element(child) for child in children_block]
+    else:
+        raise TemplateError("Element children must be declared as a list when provided")
+
+    return ElementSpec(type=element_type, attributes=attributes, text=text, scope=scope, children=children)

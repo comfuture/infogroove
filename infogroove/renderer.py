@@ -8,7 +8,24 @@ from jsonschema import ValidationError as JSONSchemaValidationError
 from jsonschema import SchemaError
 from jsonschema import validate as validate_jsonschema
 
-from svg import Circle, Ellipse, G, Line, Path, Polygon, Polyline, Rect, SVG, Text
+from svg import (
+    Circle,
+    ClipPath,
+    Defs,
+    Ellipse,
+    G,
+    Line,
+    LinearGradient,
+    Path,
+    Polygon,
+    Polyline,
+    RadialGradient,
+    Rect,
+    SVG,
+    Stop,
+    TSpan,
+    Text,
+)
 
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
 from .formula import FormulaEngine
@@ -25,6 +42,12 @@ SUPPORTED_ELEMENTS = {
     "polygon": Polygon,
     "polyline": Polyline,
     "g": G,
+    "clippath": ClipPath,
+    "defs": Defs,
+    "lineargradient": LinearGradient,
+    "radialgradient": RadialGradient,
+    "stop": Stop,
+    "tspan": TSpan,
 }
 
 
@@ -84,21 +107,37 @@ class InfogrooveRenderer:
 
     def _append(self, svg_root: SVG, element: ElementSpec, context: Mapping[str, Any]) -> None:
         """Instantiate an SVG element from the template definition and attach it."""
+        node = self._create_node(element, context)
+        if svg_root.elements is None:
+            svg_root.elements = []
+        svg_root.elements.append(node)
+
+    def _create_node(self, element: ElementSpec, context: Mapping[str, Any]) -> Any:
+        """Instantiate an SVG node (and any nested children) from a template element."""
+
         factory = SUPPORTED_ELEMENTS.get(element.type.lower())
         if factory is None:
             raise RenderError(f"Unsupported element type '{element.type}'")
+
         prepared_attributes = {
             self._normalise_attribute_key(key): fill_placeholders(value, context)
             for key, value in element.attributes.items()
         }
-        if factory is Text:
+
+        if factory in (Text, TSpan):
             text_value = fill_placeholders(element.text or "", context)
             node = factory(text=text_value, **prepared_attributes)
         else:
             node = factory(**prepared_attributes)
-        if svg_root.elements is None:
-            svg_root.elements = []
-        svg_root.elements.append(node)
+
+        if element.children:
+            if not hasattr(node, "elements"):
+                raise RenderError(f"Element type '{element.type}' does not support nested children")
+            child_nodes = [self._create_node(child, context) for child in element.children]
+            existing = list(getattr(node, "elements", []) or [])
+            node.elements = existing + child_nodes
+
+        return node
 
     def _elements_for_scope(self, scope: str) -> Iterable[ElementSpec]:
         """Return the subset of elements matching the provided scope value."""
@@ -201,6 +240,7 @@ class InfogrooveRenderer:
     @staticmethod
     def _normalise_attribute_key(key: str) -> str:
         """Translate template attribute keys to svg.py-friendly parameter names."""
+        key = key.replace("-", "_")
         if key == "class":
             return "class_"
         if any(ch.isupper() for ch in key):
