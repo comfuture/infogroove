@@ -163,7 +163,11 @@ class InfogrooveRenderer:
             "count": total,
         })
         context.update(item)
-        if "value" not in context and all(isinstance(v, (int, float)) for v in item.values()):
+        if (
+            "value" not in context
+            and item
+            and all(isinstance(v, (int, float)) for v in item.values())
+        ):
             context["value"] = next(iter(item.values()))
         context.setdefault("label", item.get("text") or item.get("label"))
         return context
