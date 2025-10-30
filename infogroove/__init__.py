@@ -5,12 +5,13 @@ from __future__ import annotations
 from importlib import metadata
 from typing import Mapping, Sequence
 
+from .loader import load, load_path, loads
 from .renderer import InfographicRenderer
-from .template_loader import load_template
 
 __all__ = [
     "InfographicRenderer",
-    "load_template",
+    "load",
+    "loads",
     "get_version",
     "render_svg",
 ]
@@ -28,6 +29,5 @@ def get_version() -> str:
 def render_svg(template_path: str, data: Sequence[Mapping[str, object]]) -> str:
     """Convenience helper to load a template and render it in a single call."""
 
-    template = load_template(template_path)
-    renderer = InfographicRenderer(template)
+    renderer = load_path(template_path)
     return renderer.render(data)

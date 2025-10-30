@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError, TemplateError
-from .renderer import InfographicRenderer
-from .template_loader import load_template
+from .loader import load_path
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -20,9 +19,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        template = load_template(args.template)
+        renderer = load_path(args.template)
         data = _load_data(args.input)
-        renderer = InfographicRenderer(template)
         svg_markup = renderer.render(data)
         _write_output(svg_markup, args.output)
     except (TemplateError, DataValidationError, FormulaEvaluationError, RenderError) as exc:
