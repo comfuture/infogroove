@@ -153,3 +153,27 @@ def test_infogroove_factory_accepts_mapping():
     markup = renderer.render([{}] * 3)
 
     assert markup.count("<circle") == 3
+
+
+def test_render_supports_inline_attribute_expressions():
+    renderer = Infogroove(
+        {
+            "variables": {"canvas": {"width": 60, "height": 80}},
+            "elements": [
+                {
+                    "type": "circle",
+                    "attributes": {
+                        "cx": "{index * 10}",
+                        "cy": "{canvas.height / 2}",
+                        "r": "5",
+                    },
+                }
+            ],
+        }
+    )
+
+    markup = renderer.render([{}, {}])
+
+    assert "cx=\"0\"" in markup
+    assert "cx=\"10\"" in markup
+    assert "cy=\"40.0\"" in markup

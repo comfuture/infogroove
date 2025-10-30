@@ -72,6 +72,16 @@ def ensure_accessible(value: Any) -> Any:
     return value
 
 
+def _unwrap_accessible(value: Any) -> Any:
+    """Convert Mapping/Sequence adapters back to built-in container types."""
+
+    if isinstance(value, MappingAdapter):
+        return {key: _unwrap_accessible(value[key]) for key in value}
+    if isinstance(value, SequenceAdapter):
+        return [_unwrap_accessible(item) for item in value]
+    return value
+
+
 def tokenize_path(expression: str) -> list[str]:
     """Split a dotted and bracketed path into individual navigation tokens."""
 
@@ -256,7 +266,21 @@ def fill_placeholders(template: str, context: Mapping[str, Any]) -> str:
 
     def _replacement(match: re.Match[str]) -> str:
         token = match.group(1).strip()
-        value = resolve_path(context, token)
+        try:
+            value = resolve_path(context, token)
+        except KeyError:
+            value = _evaluate_inline_expression(token, context)
         return "" if value is None else str(value)
 
     return PLACEHOLDER_PATTERN.sub(_replacement, template)
+
+
+def _evaluate_inline_expression(expression: str, context: Mapping[str, Any]) -> Any:
+    """Evaluate an inline placeholder expression within the template context."""
+
+    safe_locals = default_eval_locals(context)
+    try:
+        result = eval(expression, {"__builtins__": {}}, safe_locals)
+    except Exception as exc:  # pragma: no cover - depends on user expression
+        raise KeyError(expression) from exc
+    return _unwrap_accessible(result)

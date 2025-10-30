@@ -84,3 +84,20 @@ def test_fill_placeholders_inserts_context_values():
 
     with pytest.raises(KeyError):
         fill_placeholders("{missing.value}", context)
+
+
+def test_fill_placeholders_evaluates_inline_expressions():
+    context = {
+        "value": 7,
+        "index": 2,
+        "canvas": {"width": 120, "height": 80},
+    }
+    rendered = fill_placeholders(
+        "Double={value * 2} Next={index + 1} Half={canvas.height / 2}",
+        context,
+    )
+
+    assert rendered == "Double=14 Next=3 Half=40.0"
+
+    with pytest.raises(KeyError):
+        fill_placeholders("{missing + 1}", context)

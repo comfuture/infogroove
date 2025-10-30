@@ -84,8 +84,12 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
         raise TemplateError("'elements' must be provided as a list")
     elements = [_parse_element(entry) for entry in elements_raw]
 
-    formulas = payload.get("formulas", {})
-    if not isinstance(formulas, Mapping):
+    formulas_block = payload.get("formulas")
+    if formulas_block is None:
+        formulas: Mapping[str, Any] = {}
+    elif isinstance(formulas_block, Mapping):
+        formulas = formulas_block
+    else:
         raise TemplateError("'formulas' must be a mapping of name to expression")
 
     range_block = payload.get("numElementsRange")
