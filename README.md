@@ -80,6 +80,25 @@ Key flags:
 - `-i, --input`: JSON file containing an array of data objects.
 - `-o, --output`: Destination SVG path or `-` for stdout.
 
+## Programmatic Usage
+
+Infogroove exposes a loader for integrating templates directly into Python
+applications:
+
+```python
+from infogroove.loader import load
+
+with open("examples/arc-circles/def.json", encoding="utf-8") as fh:
+    infographic = load(fh)
+
+svg_markup = infographic.render([{"label": "Alpha", "value": 3}])
+```
+
+Prefer `infogroove.loader.load` for file objects and `infogroove.loader.loads`
+when the template definition is already in memory as a string. Both helpers
+return an `InfographicRenderer`, exposing the parsed template via the
+`template` property for metadata inspection.
+
 ## Developing Templates
 
 - Formulas can reference global values (`canvas.width`, `radius`),
