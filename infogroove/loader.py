@@ -8,28 +8,28 @@ from typing import IO, Any, Mapping
 
 from .exceptions import TemplateError
 from .models import CanvasSpec, ElementSpec, TemplateSpec
-from .renderer import InfographicRenderer
+from .renderer import InfogrooveRenderer
 
 
-def load(handle: IO[str]) -> InfographicRenderer:
+def load(handle: IO[str]) -> InfogrooveRenderer:
     """Load an infographic definition from a text stream."""
 
     raw_text = handle.read()
     source_name = getattr(handle, "name", None)
     source_path = Path(source_name) if isinstance(source_name, str) and source_name else None
     template = _template_from_text(raw_text, source_path)
-    return InfographicRenderer(template)
+    return InfogrooveRenderer(template)
 
 
-def loads(data: str, *, source: str | Path | None = None) -> InfographicRenderer:
+def loads(data: str, *, source: str | Path | None = None) -> InfogrooveRenderer:
     """Load an infographic definition from a JSON string."""
 
     source_path = Path(source) if source is not None else None
     template = _template_from_text(data, source_path)
-    return InfographicRenderer(template)
+    return InfogrooveRenderer(template)
 
 
-def load_path(path: str | Path) -> InfographicRenderer:
+def load_path(path: str | Path) -> InfogrooveRenderer:
     """Load and parse a template definition from a filesystem path."""
 
     template_path = Path(path)
@@ -38,7 +38,7 @@ def load_path(path: str | Path) -> InfographicRenderer:
     except OSError as exc:  # pragma: no cover - filesystem dependent
         raise TemplateError(f"Unable to read template '{template_path}'") from exc
     template = _template_from_text(raw_text, template_path)
-    return InfographicRenderer(template)
+    return InfogrooveRenderer(template)
 
 
 def _template_from_text(raw_text: str, source: Path | None) -> TemplateSpec:
