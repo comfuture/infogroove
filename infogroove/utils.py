@@ -280,7 +280,6 @@ def _evaluate_inline_expression(expression: str, context: Mapping[str, Any]) -> 
 
     safe_locals = default_eval_locals(context)
     try:
-        result = eval(expression, {"__builtins__": {}}, safe_locals)
-    except Exception as exc:  # pragma: no cover - depends on user expression
+    except (TypeError, NameError, ValueError) as exc:  # pragma: no cover - depends on user expression
         raise KeyError(expression) from exc
     return _unwrap_accessible(result)
