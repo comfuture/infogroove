@@ -41,8 +41,8 @@ class InfographicRenderer:
         dataset = self._validate_data(data)
         base_context = self._build_base_context(dataset)
         svg_root = SVG(
-            width=self._template.screen.width,
-            height=self._template.screen.height,
+            width=self._template.canvas.width,
+            height=self._template.canvas.height,
             elements=[],
         )
         self._render_canvas_elements(svg_root, base_context)
@@ -100,9 +100,12 @@ class InfographicRenderer:
 
     def _build_base_context(self, dataset: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         """Create the global context shared by all elements and formulas."""
-        styles = dict(self._template.styles)
-        width = self._template.screen.width
-        height = self._template.screen.height
+        variables = dict(self._template.variables)
+        canvas_map = dict(variables.get("canvas", {})) if isinstance(variables.get("canvas"), Mapping) else {}
+        width = float(canvas_map.get("width", self._template.canvas.width))
+        height = float(canvas_map.get("height", self._template.canvas.height))
+        canvas_map.update({"width": width, "height": height})
+        variables["canvas"] = canvas_map
         values = [
             item.get("value")
             for item in dataset
@@ -124,13 +127,14 @@ class InfographicRenderer:
             "items": dataset,
             "total": len(dataset),
             "count": len(dataset),
-            "screen": {"width": width, "height": height},
-            "screenWidth": width,
-            "screenHeight": height,
-            "screen_width": width,
-            "screen_height": height,
-            "styles": styles,
+            "canvas": canvas_map,
+            "canvasWidth": width,
+            "canvasHeight": height,
+            "canvas_width": width,
+            "canvas_height": height,
             **metrics,
+            **{key: value for key, value in variables.items() if key != "canvas"},
+            "variables": variables,
         }
 
     def _build_item_context(

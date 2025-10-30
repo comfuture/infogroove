@@ -1,4 +1,4 @@
-"""Loading and validating IGD template files."""
+"""Loading and validating template definition files."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .exceptions import TemplateError
-from .models import ElementSpec, ScreenSpec, TemplateSpec
+from .models import CanvasSpec, ElementSpec, TemplateSpec
 
 
 def load_template(path: str | Path) -> TemplateSpec:
-    """Load and parse an IGD template file from disk."""
+    """Load and parse a template definition file from disk."""
 
     template_path = Path(path)
     try:
@@ -28,14 +28,28 @@ def load_template(path: str | Path) -> TemplateSpec:
 def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     """Convert JSON data into a strongly typed :class:`TemplateSpec`."""
 
-    screen_block = payload.get("screen") or {}
-    if not isinstance(screen_block, Mapping):
-        raise TemplateError("'screen' must be a mapping with width and height")
-    width = screen_block.get("width") or payload.get("screenWidth")
-    height = screen_block.get("height") or payload.get("screenHeight")
+    if "styles" in payload:
+        raise TemplateError("'styles' is no longer supported; move values under 'variables'")
+    if any(key in payload for key in ("screen", "screenWidth", "screenHeight")):
+        raise TemplateError("Canvas dimensions must be defined under 'variables.canvas'")
+
+    variables_block = payload.get("variables")
+    if not isinstance(variables_block, Mapping):
+        raise TemplateError("'variables' must be a mapping containing 'canvas'")
+    variables = dict(variables_block)
+
+    canvas_block = variables.get("canvas")
+    if not isinstance(canvas_block, Mapping):
+        raise TemplateError("'variables.canvas' must be a mapping with width and height")
+    width = canvas_block.get("width")
+    height = canvas_block.get("height")
     if width is None or height is None:
-        raise TemplateError("Both screen width and height must be provided")
-    screen = ScreenSpec(width=float(width), height=float(height))
+        raise TemplateError("Both canvas width and height must be provided")
+    canvas = CanvasSpec(width=float(width), height=float(height))
+    canvas_map = dict(canvas_block)
+    canvas_map["width"] = canvas.width
+    canvas_map["height"] = canvas.height
+    variables["canvas"] = canvas_map
 
     elements_raw = payload.get("elements", [])
     if not isinstance(elements_raw, list):
@@ -45,9 +59,6 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     formulas = payload.get("formulas", {})
     if not isinstance(formulas, Mapping):
         raise TemplateError("'formulas' must be a mapping of name to expression")
-    styles = payload.get("styles", {})
-    if not isinstance(styles, Mapping):
-        raise TemplateError("'styles' must be a mapping when provided")
 
     range_block = payload.get("numElementsRange")
     range_tuple: tuple[int, int] | None = None
@@ -64,10 +75,10 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
 
     return TemplateSpec(
         source_path=path,
-        screen=screen,
+        canvas=canvas,
         elements=elements,
         formulas=dict(formulas),
-        styles=dict(styles),
+        variables=dict(variables),
         num_elements_range=range_tuple,
         schema=schema_block,  # type: ignore[arg-type]
         metadata=metadata,

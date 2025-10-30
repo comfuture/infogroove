@@ -33,8 +33,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     """Create the argument parser used by the CLI entry point."""
 
-    parser = argparse.ArgumentParser(description="Render IGD infographic templates to SVG")
-    parser.add_argument("-f", "--template", required=True, help="Path to the .igd template file")
+    parser = argparse.ArgumentParser(description="Render infographic templates to SVG")
+    parser.add_argument(
+        "-f",
+        "--template",
+        required=True,
+        help="Path to the template definition JSON file (e.g. def.json)",
+    )
     parser.add_argument("-i", "--input", required=True, help="Path to the JSON data file")
     parser.add_argument(
         "-o",
