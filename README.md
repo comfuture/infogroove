@@ -96,7 +96,7 @@ svg_markup = infographic.render([{"label": "Alpha", "value": 3}])
 
 Prefer `infogroove.loader.load` for file objects and `infogroove.loader.loads`
 when the template definition is already in memory as a string. Both helpers
-return an `InfographicRenderer`, exposing the parsed template via the
+return an `InfogrooveRenderer`, exposing the parsed template via the
 `template` property for metadata inspection.
 
 ## Developing Templates
