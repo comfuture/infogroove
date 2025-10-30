@@ -9,7 +9,10 @@ from infogroove.template_loader import _parse_template, load_template
 
 def make_template_payload(**overrides):
     payload = {
-        "screen": {"width": 800, "height": 600},
+        "variables": {
+            "canvas": {"width": 800, "height": 600},
+            "color": "#fff",
+        },
         "elements": [
             {
                 "type": "rect",
@@ -23,7 +26,6 @@ def make_template_payload(**overrides):
             },
         ],
         "formulas": {"double": "value * 2"},
-        "styles": {"color": "#fff"},
         "numElementsRange": [1, 3],
         "schema": {"type": "array"},
         "name": "Example",
@@ -35,17 +37,18 @@ def make_template_payload(**overrides):
 
 
 def test_load_template_reads_and_parses(tmp_path):
-    template_path = tmp_path / "template.igd"
+    template_path = tmp_path / "def.json"
     template_path.write_text(json.dumps(make_template_payload()), encoding="utf-8")
 
     template = load_template(template_path)
 
     assert template.source_path == template_path
-    assert template.screen.width == 800
+    assert template.canvas.width == 800
     assert template.elements[0].scope == "canvas"
     assert template.elements[1].text == "hello"
     assert template.formulas["double"] == "value * 2"
-    assert template.styles["color"] == "#fff"
+    assert template.variables["color"] == "#fff"
+    assert template.variables["canvas"]["height"] == 600
     assert template.num_elements_range == (1, 3)
     assert template.schema == {"type": "array"}
     assert template.metadata == {
@@ -55,44 +58,46 @@ def test_load_template_reads_and_parses(tmp_path):
     }
 
 
-def test_parse_template_accepts_screen_fallbacks(tmp_path):
-    payload = make_template_payload(screen={}, screenWidth=400, screenHeight=500)
-    template = _parse_template(tmp_path / "template.igd", payload)
+def test_parse_template_requires_canvas_dimensions(tmp_path):
+    payload = make_template_payload()
+    payload["variables"]["canvas"] = {"width": 400}
 
-    assert template.screen.width == 400
-    assert template.screen.height == 500
+    with pytest.raises(TemplateError, match="Both canvas width and height"):
+        _parse_template(tmp_path / "def.json", payload)
 
 
 @pytest.mark.parametrize(
-    "overrides, message",
+    "mutator, message",
     [
-        ({"screen": "oops"}, "'screen' must be a mapping"),
-        ({"screen": {}}, "Both screen width"),
-        ({"elements": {}}, "'elements' must"),
+        (lambda payload: payload.update({"variables": "oops"}), "'variables' must"),
+        (lambda payload: payload["variables"].pop("canvas"), "'variables.canvas' must"),
+        (lambda payload: payload["variables"].update({"canvas": "oops"}), "'variables.canvas' must"),
+        (lambda payload: payload["variables"].update({"canvas": {}}), "Both canvas width"),
+        (lambda payload: payload.update({"screen": {"width": 1, "height": 2}}), "Canvas dimensions must"),
+        (lambda payload: payload.update({"screenWidth": 100}), "Canvas dimensions must"),
+        (lambda payload: payload.update({"elements": {}}), "'elements' must"),
+        (lambda payload: payload.update({"elements": [{"type": 1}]}), "Element definitions require"),
         (
-            {"elements": [{"type": 1}]},
-            "Element definitions require",
-        ),
-        (
-            {"elements": [{"type": "rect", "attributes": []}]},
+            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": []}]}),
             "Element attributes must",
         ),
         (
-            {"elements": [{"type": "rect", "attributes": {}, "text": 1}]},
+            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": {}, "text": 1}]}),
             "Element text must",
         ),
         (
-            {"elements": [{"type": "rect", "attributes": {}, "scope": "row"}]},
+            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": {}, "scope": "row"}]}),
             "Element scope must",
         ),
-        ({"formulas": []}, "'formulas' must"),
-        ({"styles": []}, "'styles' must"),
+        (lambda payload: payload.update({"formulas": []}), "'formulas' must"),
+        (lambda payload: payload.update({"styles": {}}), "'styles' is no longer supported"),
     ],
 )
-def test_parse_template_validation_errors(tmp_path, overrides, message):
-    payload = make_template_payload(**overrides)
+def test_parse_template_validation_errors(tmp_path, mutator, message):
+    payload = make_template_payload()
+    mutator(payload)
 
     with pytest.raises(TemplateError) as exc:
-        _parse_template(tmp_path / "template.igd", payload)
+        _parse_template(tmp_path / "def.json", payload)
 
     assert message in str(exc.value)

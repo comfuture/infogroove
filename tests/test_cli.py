@@ -38,11 +38,11 @@ def test_write_output_handles_stdout(tmp_path, capsys):
 
 
 def test_main_renders_svg_end_to_end(tmp_path):
-    template_path = tmp_path / "template.igd"
+    template_path = tmp_path / "def.json"
     template_path.write_text(
         json.dumps(
             {
-                "screen": {"width": 100, "height": 100},
+                "variables": {"canvas": {"width": 100, "height": 100}},
                 "elements": [
                     {
                         "type": "text",
@@ -76,15 +76,15 @@ def test_main_renders_svg_end_to_end(tmp_path):
     ],
 )
 def test_render_svg_helper(tmp_path, payload):
-    template_path = tmp_path / "template.igd"
+    template_path = tmp_path / "def.json"
     template_path.write_text(
         json.dumps(
             {
-                "screen": {"width": 100, "height": 100},
+                "variables": {"canvas": {"width": 100, "height": 100}},
                 "elements": [
                     {
                         "type": "rect",
-                        "attributes": {"width": "{screen.width}", "height": "10"},
+                        "attributes": {"width": "{canvas.width}", "height": "10"},
                         "scope": "canvas",
                     }
                 ],
