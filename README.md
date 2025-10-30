@@ -46,6 +46,7 @@ uv run --extra dev pytest --cov=infogroove --cov=tests
 | Blue Parallelogram Bands | ![Blue parallelograms preview](examples/blue-parallelograms/blue-parallelograms.svg) |
 | Arc Circles | ![Arc circles preview](examples/arc-circles/arc-circles.svg) |
 | Staggered Keywords | ![Staggered keywords preview](examples/staggered-keywords/staggered-keywords.svg) |
+| Key Messages | ![Key messages preview](examples/key-messages/key-messages.svg) |
 
 ## Template Overview
 

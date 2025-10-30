@@ -6,6 +6,7 @@ import io
 import math
 import random
 import re
+import textwrap
 import tokenize
 from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -233,6 +234,7 @@ def default_eval_locals(context: Mapping[str, Any]) -> dict[str, Any]:
     safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
     safe_locals.setdefault("math", math)
     safe_locals.setdefault("random", random)
+    safe_locals.setdefault("textwrap", textwrap)
     safe_locals.setdefault(
         "Math",
         SimpleNamespace(
