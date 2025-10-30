@@ -28,7 +28,7 @@ SUPPORTED_ELEMENTS = {
 }
 
 
-class InfographicRenderer:
+class InfogrooveRenderer:
     """Render SVG documents by combining templates with external data."""
 
     def __init__(self, template: TemplateSpec):

@@ -5,11 +5,13 @@ from __future__ import annotations
 from importlib import metadata
 from typing import Mapping, Sequence
 
+from .core import Infogroove
 from .loader import load, load_path, loads
-from .renderer import InfographicRenderer
+from .renderer import InfogrooveRenderer
 
 __all__ = [
-    "InfographicRenderer",
+    "Infogroove",
+    "InfogrooveRenderer",
     "load",
     "loads",
     "get_version",
