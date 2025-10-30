@@ -1,22 +1,21 @@
 # Infogroove Main Idea
 
-Infogroove is an infographic generation framework that turns declarative IGD
-templates into SVG output by combining structured templates, evaluated formulas,
+Infogroove is an infographic generation framework that turns declarative template
+definitions into SVG output by combining structured templates, evaluated formulas,
 and external datasets. The current implementation keeps the spirit of the
 original plan while refining the template format and rendering pipeline so that
 it integrates cleanly with `sympy` and `svg.py`.
 
-## Template Structure (`.igd`)
+## Template Structure (definition JSON)
 
 Each template is a UTF-8 JSON document. The loader (`template_loader.load_template`)
 parses the payload into strongly-typed models that the renderer consumes.
 
-- **screen** – Required pixel dimensions for the SVG viewport. Either `screen`
-  (`{"width": ..., "height": ...}`) or the legacy pair `screenWidth` /
-  `screenHeight` can be supplied.
-- **styles** – Optional mapping of reusable constants. Style values become part
-  of the evaluation context and can be referenced in formulas and placeholders,
-  e.g. `{styles.background}` or `styles.colors[index]`.
+- **variables** – Required mapping of reusable constants. It must contain
+  `canvas` with viewport `width` and `height`, and can expose any additional
+  values (e.g. `margin`, `palette`, `fontFamily`). Variables are available both
+  under the `variables` object and as top-level names, so `{radius}` and
+  `{variables.radius}` resolve to the same value.
 - **formulas** – Mapping of named expressions. Expressions run through the
   `FormulaEngine`, which prefers `sympy.sympify` and transparently falls back to
   a sandboxed Python `eval` when symbolic parsing fails.
@@ -36,18 +35,20 @@ parses the payload into strongly-typed models that the renderer consumes.
 ```jsonc
 {
   "name": "Horizontal Bar Chart",
-  "screen": { "width": 960, "height": 540 },
-  "styles": {
+  "variables": {
+    "canvas": { "width": 960, "height": 540 },
     "margin": 64,
     "barHeight": 38,
+    "background": "#f8fafc",
+    "fontFamily": "Inter, Arial, sans-serif",
     "colors": ["#4338ca", "#2563eb", "#10b981"]
   },
   "formulas": {
-    "spanWidth": "screenWidth - 2 * styles.margin",
+    "spanWidth": "canvas.width - 2 * margin",
     "barWidth": "spanWidth * (value / maxValue)",
-    "barY": "styles.margin + index * (styles.barHeight + 20)",
-    "colorIndex": "index % styles.colors.length",
-    "barColor": "styles.colors[colorIndex]"
+    "barY": "margin + index * (barHeight + 20)",
+    "colorIndex": "index % colors.length",
+    "barColor": "colors[colorIndex]"
   },
   "elements": [
     {
@@ -58,26 +59,26 @@ parses the payload into strongly-typed models that the renderer consumes.
         "y": "0",
         "width": "100%",
         "height": "100%",
-        "fill": "{styles.background}"
+        "fill": "{background}"
       }
     },
     {
       "type": "rect",
       "attributes": {
-        "x": "{styles.margin}",
+        "x": "{margin}",
         "y": "{barY}",
         "width": "{barWidth}",
-        "height": "{styles.barHeight}",
+        "height": "{barHeight}",
         "fill": "{barColor}"
       }
     },
     {
       "type": "text",
       "attributes": {
-        "x": "{styles.margin}",
+        "x": "{margin}",
         "y": "{barY}",
         "dominantBaseline": "middle",
-        "fontFamily": "{styles.fontFamily}"
+        "fontFamily": "{fontFamily}"
       },
       "text": "{label}"
     }
@@ -107,10 +108,11 @@ met.
 
 The renderer builds a base context that is shared by every element:
 
-- Screen metrics are exposed in multiple naming styles:
-  `screen.width`, `screenWidth`, `screen_width`, etc.
-- Styles become a dictionary that supports both item access and dotted access,
-  thanks to lightweight adapter classes (`MappingAdapter`, `SequenceAdapter`).
+- Canvas metrics are exposed in multiple naming styles:
+  `canvas.width`, `canvasWidth`, `canvas_width`, etc.
+- Variables are merged into the context with lightweight adapter classes
+  (`MappingAdapter`, `SequenceAdapter`) so dotted access works alongside item
+  access.
 - Dataset statistics (`values`, `maxValue`, `minValue`, `averageValue`) are
   automatically computed when numeric `value` fields are present.
 - The full dataset is accessible via `data`, `items`, and `count`/`total`.
@@ -124,7 +126,7 @@ For each row, the item context extends the base values with:
 
 Formulas are evaluated with the combined context. Dotted lookups inside
 expressions are rewritten into symbol placeholders before calling `sympy`, and
-the same adapters allow expressions such as `styles.colors.length` or
+the same adapters allow expressions such as `palette.length` or
 `items[0].value` to work. When all formulas for the current scope have run,
 their results are merged back into the context for placeholder substitution.
 
@@ -142,7 +144,7 @@ content of textual elements.
 
 ## Rendering Flow
 
-1. **Load template** – `load_template` reads the IGD file and produces a
+1. **Load template** – `load_template` reads the definition file and produces a
    `TemplateSpec`.
 2. **Create renderer** – `InfographicRenderer` is initialised with the template
    and prepares the `FormulaEngine`.
@@ -168,5 +170,5 @@ surfaces as readable error messages.
   perform the entire load/validate/render cycle in a single helper function.
 
 This architecture stays faithful to the original plan—templates, elements,
-formulas, styles, and schemas remain the core concepts—while reflecting the
+formulas, variables, and schemas remain the core concepts—while reflecting the
 codebase’s current shape and safety guardrails.
