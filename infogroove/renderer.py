@@ -35,6 +35,12 @@ class InfographicRenderer:
         self._template = template
         self._engine = FormulaEngine(template.formulas)
 
+    @property
+    def template(self) -> TemplateSpec:
+        """Return the underlying template specification."""
+
+        return self._template
+
     def render(self, data: Sequence[Mapping[str, Any]]) -> str:
         """Render the template with the supplied data and return SVG markup."""
 

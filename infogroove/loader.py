@@ -4,25 +4,53 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import IO, Any, Mapping
 
 from .exceptions import TemplateError
 from .models import CanvasSpec, ElementSpec, TemplateSpec
+from .renderer import InfographicRenderer
 
 
-def load_template(path: str | Path) -> TemplateSpec:
-    """Load and parse a template definition file from disk."""
+def load(handle: IO[str]) -> InfographicRenderer:
+    """Load an infographic definition from a text stream."""
+
+    raw_text = handle.read()
+    source_name = getattr(handle, "name", None)
+    source_path = Path(source_name) if isinstance(source_name, str) and source_name else None
+    template = _template_from_text(raw_text, source_path)
+    return InfographicRenderer(template)
+
+
+def loads(data: str, *, source: str | Path | None = None) -> InfographicRenderer:
+    """Load an infographic definition from a JSON string."""
+
+    source_path = Path(source) if source is not None else None
+    template = _template_from_text(data, source_path)
+    return InfographicRenderer(template)
+
+
+def load_path(path: str | Path) -> InfographicRenderer:
+    """Load and parse a template definition from a filesystem path."""
 
     template_path = Path(path)
     try:
         raw_text = template_path.read_text(encoding="utf-8")
     except OSError as exc:  # pragma: no cover - filesystem dependent
         raise TemplateError(f"Unable to read template '{template_path}'") from exc
+    template = _template_from_text(raw_text, template_path)
+    return InfographicRenderer(template)
+
+
+def _template_from_text(raw_text: str, source: Path | None) -> TemplateSpec:
+    """Convert raw JSON text into a TemplateSpec, preserving source metadata."""
+
+    label = str(source) if source is not None else "<memory>"
     try:
         payload: Mapping[str, Any] = json.loads(raw_text)
     except json.JSONDecodeError as exc:  # pragma: no cover - depends on input
-        raise TemplateError(f"Template '{template_path}' is not valid JSON") from exc
-    return _parse_template(template_path, payload)
+        raise TemplateError(f"Template '{label}' is not valid JSON") from exc
+    source_path = source or Path(label)
+    return _parse_template(source_path, payload)
 
 
 def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
