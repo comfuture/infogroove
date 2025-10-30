@@ -5,7 +5,7 @@ import pytest
 
 from infogroove.exceptions import TemplateError
 from infogroove.loader import _parse_template, load, load_path, loads
-from infogroove.renderer import InfographicRenderer
+from infogroove.renderer import InfogrooveRenderer
 
 
 def make_template_payload(**overrides):
@@ -43,7 +43,7 @@ def test_load_path_returns_renderer(tmp_path):
 
     renderer = load_path(template_path)
 
-    assert isinstance(renderer, InfographicRenderer)
+    assert isinstance(renderer, InfogrooveRenderer)
     template = renderer.template
 
     assert template.source_path == template_path

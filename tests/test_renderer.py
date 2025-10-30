@@ -2,9 +2,10 @@ from dataclasses import replace
 
 import pytest
 
+from infogroove.core import Infogroove
 from infogroove.exceptions import DataValidationError, RenderError
 from infogroove.models import CanvasSpec, ElementSpec, TemplateSpec
-from infogroove.renderer import InfographicRenderer
+from infogroove.renderer import InfogrooveRenderer
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ def sample_template(tmp_path):
 
 
 def test_render_combines_canvas_and_items(sample_template):
-    renderer = InfographicRenderer(sample_template)
+    renderer = InfogrooveRenderer(sample_template)
     svg_markup = renderer.render([
         {"label": "A", "value": 3},
         {"label": "B", "value": 4},
@@ -48,7 +49,7 @@ def test_render_combines_canvas_and_items(sample_template):
 
 
 def test_build_base_context_computes_metrics(sample_template):
-    renderer = InfographicRenderer(sample_template)
+    renderer = InfogrooveRenderer(sample_template)
     dataset = [
         {"label": "A", "value": 5},
         {"label": "B", "value": 15},
@@ -66,7 +67,7 @@ def test_build_base_context_computes_metrics(sample_template):
 
 
 def test_build_item_context_infers_defaults(sample_template):
-    renderer = InfographicRenderer(sample_template)
+    renderer = InfogrooveRenderer(sample_template)
     base = renderer._build_base_context([{"value": 2, "text": "Hello"}])
 
     context = renderer._build_item_context(base, {"value": 2, "text": "Hello"}, index=0, total=1)
@@ -78,7 +79,7 @@ def test_build_item_context_infers_defaults(sample_template):
 
 
 def test_validate_data_checks_sequence(sample_template):
-    renderer = InfographicRenderer(sample_template)
+    renderer = InfogrooveRenderer(sample_template)
 
     with pytest.raises(DataValidationError, match="sequence of mappings"):
         renderer._validate_data({"not": "a sequence"})
@@ -101,7 +102,7 @@ def test_append_rejects_unknown_element(sample_template):
         formulas={},
         variables=dict(sample_template.variables),
     )
-    renderer = InfographicRenderer(bad_template)
+    renderer = InfogrooveRenderer(bad_template)
 
     with pytest.raises(RenderError, match="Unsupported element type"):
         renderer.render([{"value": 1}])
@@ -119,10 +120,17 @@ def test_validate_data_uses_json_schema(sample_template):
             },
         },
     )
-    renderer = InfographicRenderer(template_with_schema)
+    renderer = InfogrooveRenderer(template_with_schema)
 
     valid = renderer._validate_data([{"value": 3}])
     assert valid == [{"value": 3}]
 
     with pytest.raises(DataValidationError, match="schema"):
         renderer._validate_data([{"value": "bad"}])
+
+
+def test_infogroove_factory_returns_renderer(sample_template):
+    renderer = Infogroove(sample_template)
+
+    assert isinstance(renderer, InfogrooveRenderer)
+    assert renderer.template is sample_template

@@ -1,4 +1,4 @@
-from infogroove import InfographicRenderer, get_version, load, loads, render_svg
+from infogroove import Infogroove, InfogrooveRenderer, get_version, load, loads, render_svg
 
 
 def test_get_version_returns_fallback(monkeypatch):
@@ -17,7 +17,8 @@ def test_get_version_returns_fallback(monkeypatch):
 
 
 def test_public_api_exports():
-    assert isinstance(InfographicRenderer, type)
+    assert isinstance(InfogrooveRenderer, type)
+    assert callable(Infogroove)
     assert callable(load)
     assert callable(loads)
     assert callable(render_svg)
