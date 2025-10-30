@@ -52,9 +52,9 @@ def test_case_conversion_helpers():
 
 
 def test_find_and_replace_tokens_preserves_order():
-    expression = "styles.primary.color + styles.secondary.color"
+    expression = "canvas.width + canvas.height"
     tokens = find_dotted_tokens(expression)
-    assert tokens == ["styles.primary.color", "styles.secondary.color"]
+    assert tokens == ["canvas.width", "canvas.height"]
 
     replaced = replace_tokens(expression, {token: "x" for token in tokens})
     assert replaced == "x + x"

@@ -3,19 +3,19 @@ from dataclasses import replace
 import pytest
 
 from infogroove.exceptions import DataValidationError, RenderError
-from infogroove.models import ElementSpec, ScreenSpec, TemplateSpec
+from infogroove.models import CanvasSpec, ElementSpec, TemplateSpec
 from infogroove.renderer import InfographicRenderer
 
 
 @pytest.fixture
 def sample_template(tmp_path):
     return TemplateSpec(
-        source_path=tmp_path / "template.igd",
-        screen=ScreenSpec(width=200, height=100),
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=200, height=100),
         elements=[
             ElementSpec(
                 type="rect",
-                attributes={"width": "{screen.width}", "height": "10", "class": "chart"},
+                attributes={"width": "{canvas.width}", "height": "10", "class": "chart"},
                 scope="canvas",
             ),
             ElementSpec(
@@ -26,7 +26,10 @@ def sample_template(tmp_path):
             ),
         ],
         formulas={"double": "value * 2", "label": "item['label']"},
-        styles={"fill": "#000"},
+        variables={
+            "canvas": {"width": 200, "height": 100},
+            "fill": "#000",
+        },
         num_elements_range=(1, 5),
     )
 
@@ -53,8 +56,10 @@ def test_build_base_context_computes_metrics(sample_template):
 
     context = renderer._build_base_context(dataset)
 
-    assert context["screenWidth"] == 200
-    assert context["styles"] == {"fill": "#000"}
+    assert context["canvasWidth"] == 200
+    assert context["canvas"]["height"] == 100
+    assert context["fill"] == "#000"
+    assert context["variables"]["fill"] == "#000"
     assert context["values"] == [5, 15]
     assert context["maxValue"] == 15
     assert context["averageValue"] == 10
@@ -91,10 +96,10 @@ def test_validate_data_checks_sequence(sample_template):
 def test_append_rejects_unknown_element(sample_template):
     bad_template = TemplateSpec(
         source_path=sample_template.source_path,
-        screen=sample_template.screen,
+        canvas=sample_template.canvas,
         elements=[ElementSpec(type="unknown", attributes={})],
         formulas={},
-        styles={},
+        variables=dict(sample_template.variables),
     )
     renderer = InfographicRenderer(bad_template)
 
