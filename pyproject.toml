@@ -1,9 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
 [project]
 name = "infogroove"
 version = "0.1.0"
 description = "Programmable infographic generation powered by sympy and svg.py"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
+authors = [
+    { name = "comfuture", email = "comfuture@gmail.com" },
+]
+keywords = [
+    "infographic",
+    "svg",
+    "templating",
+    "sympy",
+    "data-visualization",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+license = { text = "MIT License" }
 dependencies = [
     "svg-py>=1.9.1",
     "sympy>=1.14.0",
@@ -15,6 +41,12 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 infogroove = "infogroove.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/comfuture/infogroove"
+Repository = "https://github.com/comfuture/infogroove"
+Documentation = "https://github.com/comfuture/infogroove/tree/main/docs"
+Issues = "https://github.com/comfuture/infogroove/issues"
 
 [tool.uv]
 package = true
