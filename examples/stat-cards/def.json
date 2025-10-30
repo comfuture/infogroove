@@ -1,11 +1,11 @@
 {
   "name": "Stat Cards",
   "description": "Displays KPI cards with coloured accents.",
-  "screen": {
-    "width": 1024,
-    "height": 600
-  },
-  "styles": {
+  "variables": {
+    "canvas": {
+      "width": 1024,
+      "height": 600
+    },
     "margin": 48,
     "cardWidth": 280,
     "cardHeight": 140,
@@ -28,9 +28,9 @@
     "cardsPerRow": "max(1, min(total, 3))",
     "row": "index // cardsPerRow",
     "column": "index % cardsPerRow",
-    "cardX": "styles.margin + column * (styles.cardWidth + styles.cardGap)",
-    "cardY": "styles.margin + row * (styles.cardHeight + styles.cardGap)",
-    "accentColor": "styles.accentColors[index % styles.accentColors.length]",
+    "cardX": "margin + column * (cardWidth + cardGap)",
+    "cardY": "margin + row * (cardHeight + cardGap)",
+    "accentColor": "accentColors[index % accentColors.length]",
     "titleX": "cardX + 20",
     "titleY": "cardY + 36",
     "valueX": "cardX + 20",
@@ -47,7 +47,7 @@
         "y": "0",
         "width": "100%",
         "height": "100%",
-        "fill": "{styles.background}"
+        "fill": "{background}"
       }
     },
     {
@@ -55,9 +55,9 @@
       "attributes": {
         "x": "{cardX}",
         "y": "{cardY}",
-        "width": "{styles.cardWidth}",
-        "height": "{styles.cardHeight}",
-        "fill": "{styles.cardBackground}",
+        "width": "{cardWidth}",
+        "height": "{cardHeight}",
+        "fill": "{cardBackground}",
         "rx": "20"
       }
     },
@@ -67,7 +67,7 @@
         "x": "{cardX}",
         "y": "{cardY}",
         "width": "6",
-        "height": "{styles.cardHeight}",
+        "height": "{cardHeight}",
         "fill": "{accentColor}",
         "rx": "6"
       }
@@ -77,9 +77,9 @@
       "attributes": {
         "x": "{titleX}",
         "y": "{titleY}",
-        "fill": "{styles.titleColor}",
+        "fill": "{titleColor}",
         "fontSize": "18",
-        "fontFamily": "{styles.fontFamily}",
+        "fontFamily": "{fontFamily}",
         "dominantBaseline": "middle"
       },
       "text": "{title}"
@@ -89,9 +89,9 @@
       "attributes": {
         "x": "{valueX}",
         "y": "{valueY}",
-        "fill": "{styles.valueColor}",
+        "fill": "{valueColor}",
         "fontSize": "40",
-        "fontFamily": "{styles.fontFamily}",
+        "fontFamily": "{fontFamily}",
         "fontWeight": "700",
         "dominantBaseline": "middle"
       },
@@ -102,9 +102,9 @@
       "attributes": {
         "x": "{deltaX}",
         "y": "{deltaY}",
-        "fill": "{styles.deltaColor}",
+        "fill": "{deltaColor}",
         "fontSize": "16",
-        "fontFamily": "{styles.fontFamily}",
+        "fontFamily": "{fontFamily}",
         "dominantBaseline": "middle"
       },
       "text": "{delta}"

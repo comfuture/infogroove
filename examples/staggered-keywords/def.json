@@ -1,11 +1,11 @@
 {
   "name": "Alternating Keyword Timeline",
   "description": "Aligns keyword/description pairs on alternating sides of a central axis.",
-  "screen": {
-    "width": 960,
-    "height": 720
-  },
-  "styles": {
+  "variables": {
+    "canvas": {
+      "width": 960,
+      "height": 720
+    },
     "axisX": 480,
     "marginTop": 80,
     "rowSpacing": 120,
@@ -19,16 +19,16 @@
     "badgeFill": "#e0f2fe"
   },
   "formulas": {
-    "y": "styles.marginTop + index * styles.rowSpacing",
+    "y": "marginTop + index * rowSpacing",
     "isEven": "index % 2",
-    "keywordX": "styles.marginSide if isEven == 0 else screenWidth - styles.marginSide",
-    "descriptionX": "screenWidth - styles.marginSide if isEven == 0 else styles.marginSide",
+    "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
+    "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
     "keywordAnchor": "'start' if isEven == 0 else 'end'",
     "descriptionAnchor": "'end' if isEven == 0 else 'start'",
     "badgeX": "keywordX",
     "badgeY": "y - 36",
-    "connectorX1": "styles.axisX",
-    "connectorX2": "keywordX - styles.keywordPadding if isEven == 0 else keywordX + styles.keywordPadding"
+    "connectorX1": "axisX",
+    "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
   },
   "elements": [
     {
@@ -46,11 +46,11 @@
       "type": "line",
       "scope": "canvas",
       "attributes": {
-        "x1": "{styles.axisX}",
+        "x1": "{axisX}",
         "y1": "0",
-        "x2": "{styles.axisX}",
+        "x2": "{axisX}",
         "y2": "100%",
-        "stroke": "{styles.axisColor}",
+        "stroke": "{axisColor}",
         "strokeWidth": "4",
         "strokeDasharray": "12 18"
       }
@@ -62,7 +62,7 @@
         "y1": "{y}",
         "x2": "{connectorX2}",
         "y2": "{y}",
-        "stroke": "{styles.axisColor}",
+        "stroke": "{axisColor}",
         "strokeWidth": "3"
       }
     },
@@ -73,7 +73,7 @@
         "y": "{badgeY}",
         "width": "120",
         "height": "32",
-        "fill": "{styles.badgeFill}",
+        "fill": "{badgeFill}",
         "rx": "16"
       }
     },
@@ -82,8 +82,8 @@
       "attributes": {
         "x": "{keywordX}",
         "y": "{y} - 12",
-        "fill": "{styles.keywordColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{keywordColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "24",
         "fontWeight": "600",
         "textAnchor": "{keywordAnchor}"
@@ -95,8 +95,8 @@
       "attributes": {
         "x": "{descriptionX}",
         "y": "{y} + 18",
-        "fill": "{styles.descriptionColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{descriptionColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "18",
         "textAnchor": "{descriptionAnchor}"
       },

@@ -1,11 +1,11 @@
 {
   "name": "Blue Parallelogram Bands",
   "description": "Displays adjacent skewed bands with tonal blue fills.",
-  "screen": {
-    "width": 1200,
-    "height": 420
-  },
-  "styles": {
+  "variables": {
+    "canvas": {
+      "width": 1200,
+      "height": 420
+    },
     "marginTop": 48,
     "marginBottom": 48,
     "marginLeft": 40,
@@ -23,13 +23,12 @@
     ]
   },
   "formulas": {
-    "barWidth": "(screenWidth - styles.marginLeft - styles.marginRight - styles.skew) / total",
-    "x": "styles.marginLeft + index * barWidth",
-    "topY": "styles.marginTop",
-    "bottomY": "screenHeight - styles.marginBottom",
-    "skew": "styles.skew",
-    "colorIndex": "index % styles.colors.length",
-    "fillColor": "styles.colors[colorIndex]",
+    "barWidth": "(canvas.width - marginLeft - marginRight - skew) / total",
+    "x": "marginLeft + index * barWidth",
+    "topY": "marginTop",
+    "bottomY": "canvas.height - marginBottom",
+    "colorIndex": "index % colors.length",
+    "fillColor": "colors[colorIndex]",
     "points": "f'{x},{topY} {x + barWidth},{topY} {x + barWidth + skew},{bottomY} {x + skew},{bottomY}'",
     "labelX": "x + (barWidth + skew) / 2",
     "labelY": "topY + 44",
@@ -59,8 +58,8 @@
       "attributes": {
         "x": "{labelX}",
         "y": "{labelY}",
-        "fill": "{styles.titleColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{titleColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "24",
         "fontWeight": "600",
         "textAnchor": "middle"
@@ -72,8 +71,8 @@
       "attributes": {
         "x": "{labelX}",
         "y": "{valueY}",
-        "fill": "{styles.valueColor}",
-        "fontFamily": "{styles.fontFamily}",
+        "fill": "{valueColor}",
+        "fontFamily": "{fontFamily}",
         "fontSize": "18",
         "textAnchor": "middle"
       },
