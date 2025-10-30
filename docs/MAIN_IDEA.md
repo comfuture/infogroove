@@ -109,7 +109,7 @@ other = loads(template_json_string)
 image = other.render(dataset)
 ```
 
-Both functions return an `InfographicRenderer`. The underlying `TemplateSpec`
+Both functions return an `InfogrooveRenderer`. The underlying `TemplateSpec`
 is still accessible via `renderer.template` when projects need to inspect
 metadata.
 
@@ -167,8 +167,8 @@ content of textual elements.
 ## Rendering Flow
 
 1. **Load template** – `loader.load_path` reads the definition file and returns an
-   `InfographicRenderer` instance.
-2. **Create renderer** – the `InfographicRenderer` prepared by the loader
+   `InfogrooveRenderer` instance.
+2. **Create renderer** – the `InfogrooveRenderer` prepared by the loader
    initialises the `FormulaEngine`.
 3. **Validate data** – The incoming dataset is checked against range limits and
    optional JSON Schema requirements.
