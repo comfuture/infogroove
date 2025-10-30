@@ -10,7 +10,7 @@ Scope = Literal["item", "canvas"]
 
 
 @dataclass(slots=True)
-class ScreenSpec:
+class CanvasSpec:
     """Pixel dimensions for the SVG viewport."""
 
     width: float
@@ -29,13 +29,13 @@ class ElementSpec:
 
 @dataclass(slots=True)
 class TemplateSpec:
-    """In-memory representation of a parsed IGD template."""
+    """In-memory representation of a parsed template definition."""
 
     source_path: Path
-    screen: ScreenSpec
+    canvas: CanvasSpec
     elements: list[ElementSpec]
     formulas: Mapping[str, str]
-    styles: Mapping[str, Any] = field(default_factory=dict)
+    variables: Mapping[str, Any] = field(default_factory=dict)
     num_elements_range: tuple[int, int] | None = None
     schema: Mapping[str, Any] | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
