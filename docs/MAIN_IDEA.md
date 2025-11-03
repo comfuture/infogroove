@@ -55,18 +55,18 @@ models that the renderer consumes.
       "type": "rect",
       "repeat": {"items": "items", "as": "row"},
       "let": {
-        "spanWidth": "canvas.width - 2 * margin",
-        "barWidth": "spanWidth * (row.value / maxValue)",
-        "barY": "margin + __index__ * (barHeight + 20)",
-        "colorIndex": "__index__ % colors.length",
-        "barColor": "colors[colorIndex]"
+        "span_width": "canvas.width - 2 * margin",
+        "bar_width": "span_width * (row.value / maxValue)",
+        "bar_y": "margin + __index__ * (bar_height + 20)",
+        "color_index": "__index__ % colors.length",
+        "bar_color": "colors[color_index]"
       },
       "attributes": {
         "x": "{margin}",
-        "y": "{barY}",
-        "width": "{barWidth}",
-        "height": "{barHeight}",
-        "fill": "{barColor}"
+        "y": "{bar_y}",
+        "width": "{bar_width}",
+        "height": "{bar_height}",
+        "fill": "{bar_color}"
       }
     }
   ]
@@ -100,8 +100,8 @@ can surface helpful messages.
 
 The base context contains:
 
-- Canvas metrics exposed under multiple naming conventions (`canvas.width`,
-  `canvasWidth`, `canvas_width`).
+- Canvas metrics exposed in the `canvas` mapping (`canvas.width`,
+  `canvas.height`).
 - All entries from `properties`, wrapped in lightweight adapter classes so
   both dotted access and key lookup are available.
 - The dataset itself under `data`/`items` plus aggregate metrics (`values`,

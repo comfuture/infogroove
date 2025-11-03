@@ -66,7 +66,7 @@ aims to keep templates declarative and predictable:
 
 - `properties`: Global assignments evaluated before rendering begins. Provide
   the `canvas` size here (`width`, `height`) along with reusable constants such
-  as `palette`, `margin`, or `fontFamily`. Values are injected into the
+  as `palette`, `margin`, or `font_family`. Values are injected into the
   rendering context as-is, so strings like `"Inter, Arial, sans-serif"` remain
   literal.
 - `template`: A list of element descriptors. Each descriptor has a `type`,

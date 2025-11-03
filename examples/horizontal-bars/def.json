@@ -7,13 +7,13 @@
       "height": 540
     },
     "margin": 64,
-    "barHeight": 38,
-    "barGap": 20,
-    "valueGap": 12,
-    "fontFamily": "Inter, Arial, sans-serif",
+    "bar_height": 38,
+    "bar_gap": 20,
+    "value_gap": 12,
+    "font_family": "Inter, Arial, sans-serif",
     "background": "#ffffff",
-    "textColor": "#111827",
-    "valueColor": "#2563eb",
+    "text_color": "#111827",
+    "value_color": "#2563eb",
     "colors": [
       "#4338ca",
       "#2563eb",
@@ -43,24 +43,24 @@
       "let": {
         "label": "entry.label",
         "value": "entry.value",
-        "colorIndex": "__index__ % colors.length",
-        "barColor": "colors[colorIndex]",
-        "barX": "margin",
-        "spanWidth": "canvas.width - 2 * margin",
-        "barWidth": "spanWidth * (value / maxValue)",
-        "barY": "margin + __index__ * (barHeight + barGap)",
-        "labelY": "barY + (barHeight / 2)",
-        "valueX": "barX + barWidth + valueGap"
+        "color_index": "__index__ % colors.length",
+        "bar_color": "colors[color_index]",
+        "bar_x": "margin",
+        "span_width": "canvas.width - 2 * margin",
+        "bar_width": "span_width * (value / maxValue)",
+        "bar_y": "margin + __index__ * (bar_height + bar_gap)",
+        "label_y": "bar_y + (bar_height / 2)",
+        "value_x": "bar_x + bar_width + value_gap"
       },
       "children": [
         {
           "type": "rect",
           "attributes": {
-            "x": "{barX}",
-            "y": "{barY}",
-            "width": "{barWidth}",
-            "height": "{barHeight}",
-            "fill": "{barColor}",
+            "x": "{bar_x}",
+            "y": "{bar_y}",
+            "width": "{bar_width}",
+            "height": "{bar_height}",
+            "fill": "{bar_color}",
             "rx": "8",
             "ry": "8"
           }
@@ -68,11 +68,11 @@
         {
           "type": "text",
           "attributes": {
-            "x": "{barX}",
-            "y": "{labelY}",
-            "fill": "{textColor}",
+            "x": "{bar_x}",
+            "y": "{label_y}",
+            "fill": "{text_color}",
             "fontSize": "20",
-            "fontFamily": "{fontFamily}",
+            "fontFamily": "{font_family}",
             "dominantBaseline": "middle"
           },
           "text": "{label}"
@@ -80,11 +80,11 @@
         {
           "type": "text",
           "attributes": {
-            "x": "{valueX}",
-            "y": "{labelY}",
-            "fill": "{valueColor}",
+            "x": "{value_x}",
+            "y": "{label_y}",
+            "fill": "{value_color}",
             "fontSize": "18",
-            "fontFamily": "{fontFamily}",
+            "fontFamily": "{font_family}",
             "dominantBaseline": "middle"
           },
           "text": "{value}"
