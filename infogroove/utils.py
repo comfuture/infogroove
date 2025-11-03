@@ -125,7 +125,17 @@ def resolve_path(context: Mapping[str, Any], path: str) -> Any:
         if token == "length" and hasattr(current, "__len__"):
             return len(current)
         if isinstance(current, MappingAdapter):
-            current = current[token]
+            if token in current:
+                current = current[token]
+                continue
+            snake = to_snake_case(token)
+            camel = to_camel_case(token)
+            for candidate in {snake, camel}:
+                if candidate in current:
+                    current = current[candidate]
+                    break
+            else:
+                raise KeyError(token)
             continue
         if isinstance(current, Mapping):
             if token in current:
