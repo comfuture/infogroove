@@ -50,7 +50,18 @@ uv run --extra dev pytest --cov=infogroove --cov=tests
 
 ## Template Overview
 
-A template definition is a JSON document with these top-level keys:
+A template definition is a JSON document with these top-level keys. The design
+aims to keep templates declarative and predictable:
+
+- **Explicit scopes.** Global `let` bindings establish shared context, while
+  `repeat.let` creates isolated, per-loop overlays. Values never bleed across
+  scope boundaries unless you intentionally rebind them.
+- **Deterministic evaluation.** Bindings resolve lazily the first time they
+  are referenced. Cycles are detected and reported early, preventing runaway
+  recursion and making intent obvious.
+- **Composable building blocks.** Elements remain small, nested structures.
+  Complex layouts emerge from combining scoped bindings and child trees rather
+  than inventing a verbose DSL.
 
 - `let`: Global bindings evaluated before rendering begins. Provide the
   `canvas` size here (`width`, `height`) along with reusable constants such as
@@ -160,3 +171,7 @@ svg_inline = infographic.render([{}] * 10)
   its `let` bindings so they stay scoped to that block.
 - Inline expressions handle quick maths (`{idx * 10}`) while `repeat.let`
   bindings are ideal for shared or multi-step calculations.
+- Let bindings resolve lazily, so the order you declare keys does not matter.
+  However, circular definitions (e.g. `total: "max"`, `max: "total"`) will be
+  rejected with a clear error. Break cycles by lifting shared calculations into
+  a new binding or restructuring the dependency chain.
