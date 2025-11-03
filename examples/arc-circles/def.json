@@ -24,6 +24,45 @@
     ],
     "background": "#f0f9ff"
   },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Arc milestones payload",
+    "description": "Top-level payload containing the milestone collection and optional metadata.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 12,
+        "items": {
+          "type": "object",
+          "required": [
+            "label",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Milestone name rendered above the circle."
+            },
+            "value": {
+              "type": "string",
+              "description": "Timeline position text displayed inside the milestone."
+            }
+          }
+        }
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Optional details shared with downstream consumers.",
+        "additionalProperties": true
+      }
+    }
+  },
   "template": [
     {
       "type": "rect",

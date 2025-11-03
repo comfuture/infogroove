@@ -22,7 +22,53 @@
       "#db2777"
     ]
   },
-  "numElementsRange": [1, 12],
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Horizontal bar payload",
+    "description": "Top-level payload providing bar entries and optional accessories.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 12,
+        "items": {
+          "type": "object",
+          "required": [
+            "label",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Category label displayed to the left of the bar."
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Numeric figure used to scale the bar length."
+            }
+          }
+        }
+      },
+      "items2": {
+        "type": "array",
+        "description": "Optional secondary series rendered by downstream consumers.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": {"type": "string"},
+            "value": {"type": "number"}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
   "template": [
     {
       "type": "rect",

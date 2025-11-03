@@ -18,6 +18,48 @@
     "description_color": "#4b5563",
     "badge_fill": "#e0f2fe"
   },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Keyword timeline payload",
+    "description": "Top-level payload containing alternating keyword entries and optional annotations.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": [
+            "keyword",
+            "description"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "keyword": {
+              "type": "string",
+              "description": "Short keyword shown near the axis."
+            },
+            "description": {
+              "type": "string",
+              "description": "Longer explanatory text displayed opposite the keyword."
+            }
+          }
+        }
+      },
+      "annotations": {
+        "type": "array",
+        "description": "Optional supplementary entries for downstream tooling.",
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  },
   "template": [
     {
       "type": "rect",

@@ -23,7 +23,58 @@
       "#a855f7"
     ]
   },
-  "numElementsRange": [1, 8],
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Stat card payload",
+    "description": "Top-level payload containing card entries and optional comparative data.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 8,
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "value",
+            "delta"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Short KPI name displayed at the top of the card."
+            },
+            "value": {
+              "type": ["number", "string"],
+              "description": "Primary metric shown prominently in the card."
+            },
+            "delta": {
+              "type": "string",
+              "description": "Context or change indicator rendered beneath the value."
+            }
+          }
+        }
+      },
+      "items2": {
+        "type": "array",
+        "description": "Optional comparative series for downstream analysis.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "value": {"type": ["number", "string"]},
+            "delta": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
   "template": [
     {
       "type": "rect",

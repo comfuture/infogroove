@@ -22,7 +22,52 @@
     "card_title_size": 24,
     "card_subtitle_size": 18
   },
-  "numElementsRange": [1, 6],
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Key message payload",
+    "description": "Top-level payload containing a featured message followed by supporting cards.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "subtitle"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Hero or supporting message headline."
+            },
+            "subtitle": {
+              "type": "string",
+              "description": "Secondary copy displayed beneath the title."
+            }
+          }
+        }
+      },
+      "items2": {
+        "type": "array",
+        "description": "Optional secondary messages used by downstream agents.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "subtitle": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
   "template": [
     {
       "type": "rect",
