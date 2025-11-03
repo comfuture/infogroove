@@ -52,25 +52,50 @@ uv run --extra dev pytest --cov=infogroove --cov=tests
 
 A template definition is a JSON document with these top-level keys:
 
-- `variables`: Global constants available throughout rendering. Define
-  `variables.canvas` with viewport `width` and `height`, plus any reusable
-  values such as `palette`, `margin`, or `fontFamily`. Variables are exposed in
-  the rendering context both under `variables` and as direct names, so a value
-  declared as `variables.radius` is available as `{radius}`.
-- `formulas` (optional): Named expressions evaluated with sympy. Results are
-  merged into the rendering context for placeholder substitution. Skip the
-  block entirely when inline expressions are sufficient.
-- `elements`: A list of SVG element descriptors. Each descriptor has a `type`,
-  attribute map, optional `text` content, and an optional `scope` (`canvas` or
-  `item`). Canvas elements are rendered once; item elements repeat for each
-  data record.
-- `numElementsRange` (optional): Expected minimum and maximum number of data
-  items.
+- `let`: Global bindings evaluated before rendering begins. Provide the
+  `canvas` size here (`width`, `height`) along with reusable constants such as
+  `palette`, `margin`, or `fontFamily`. Bindings can be literals or
+  expressions; results become available directly as `{margin}` (and are also
+  exposed under `let.margin` for compatibility).
+- `template`: A list of element descriptors. Each descriptor has a `type`,
+  optional attribute map, optional `text`, and optional `children`. Elements
+  render once unless a `repeat` block is present.
+- `numElementsRange` (optional): Expected minimum and maximum number of input
+  records for validation.
+
+The `repeat` block explicitly controls iteration:
+
+```json
+{
+  "type": "text",
+  "repeat": {
+    "items": "items",
+    "as": "row",
+    "index": "idx",
+    "let": {
+      "label": "row.label",
+      "x": "idx * 24"
+    }
+  },
+  "attributes": {"x": "{x}", "y": "40"},
+  "text": "{label}"
+}
+```
+
+- `items` references the collection to iterate (any dotted path resolved via
+  `let`/data access).
+- `as` names the current element, while the optional `index` binding exposes
+  the zero-based position.
+- `let` injects per-iteration bindings scoped to that repeat. Expressions can
+  reference the current item, previously declared loop bindings, and globals.
+
+During iteration, Infogroove also injects reserved helpers such as `__index__`,
+`__first__`, `__last__`, `__count__`, and `__total__` for convenience.
 
 Placeholder syntax supports both `{path.to.value}` lookups and inline Python
-expressions such as `{index * 10}` or `{canvas.width / 2}`. Expressions are
-evaluated inside the same safe context exposed to formulas (variables, data
-fields, derived metrics, and formula results).
+expressions such as `{idx * 10}` or `{canvas.width / 2}`. Expressions are
+evaluated inside the same safe context as loop bindings (global let values,
+data fields, derived metrics, and loop-scoped bindings).
 
 ## CLI Options
 
@@ -95,7 +120,8 @@ from infogroove.loader import load
 with open("examples/arc-circles/def.json", encoding="utf-8") as fh:
     infographic = load(fh)
 
-svg_markup = infographic.render([{"label": "Alpha", "value": 3}])
+data = [{"label": "Alpha", "value": 3}]
+svg_markup = infographic.render(data)
 ```
 
 Prefer `infogroove.loader.load` for file objects and `infogroove.loader.loads`
@@ -110,13 +136,16 @@ infographic directly with the `Infogroove` factory:
 from infogroove import Infogroove
 
 infographic = Infogroove({
-    "variables": {
+    "let": {
         "canvas": {"width": 200, "height": 40},
         "gap": 10,
     },
-    "formulas": {"x": "index * gap"},
-    "elements": [
-        {"type": "circle", "attributes": {"cx": "{x}", "cy": "20", "r": "5"}},
+    "template": [
+        {
+            "type": "circle",
+            "attributes": {"cx": "{idx * gap}", "cy": "20", "r": "5"},
+            "repeat": {"items": "data", "as": "item", "index": "idx"}
+        }
     ],
 })
 
@@ -125,11 +154,9 @@ svg_inline = infographic.render([{}] * 10)
 
 ## Developing Templates
 
-- Formulas can reference global values (`canvas.width`, `radius`),
-  per-item fields (`value`, `label`), and derived metrics (`maxValue`,
-  `averageValue`).
-- Place reusable constants (including canvas dimensions) under `variables`.
-- Provide `scope: "canvas"` for static backgrounds and decorations.
-- Choose between inline expressions and formulas depending on reuse: inline
-  placeholders handle quick math (`{index * 10}`), while formulas remain useful
-  for shared or multi-step calculations.
+- Keep shared constants (including canvas dimensions) under the top-level
+  `let` block.
+- Use `repeat` to make iteration explicit; push derived per-loop values into
+  its `let` bindings so they stay scoped to that block.
+- Inline expressions handle quick maths (`{idx * 10}`) while `repeat.let`
+  bindings are ideal for shared or multi-step calculations.
