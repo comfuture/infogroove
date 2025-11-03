@@ -141,8 +141,12 @@ def resolve_path(context: Mapping[str, Any], path: str) -> Any:
                 raise KeyError(token)
             continue
         if isinstance(current, SequenceAdapter):
-            current = current[int(token)] if token.isdigit() else getattr(current, token)
-            continue
+            if token.isdigit():
+                current = current[int(token)]
+                continue
+            if token == "length":
+                return len(current)
+            raise KeyError(token)
         if isinstance(current, Sequence) and not isinstance(current, (str, bytes)):
             if token.isdigit():
                 current = current[int(token)]

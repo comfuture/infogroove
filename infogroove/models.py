@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, Mapping, MutableMapping
-
-Scope = Literal["item", "canvas"]
+from typing import Any, Mapping, MutableMapping
 
 
 @dataclass(slots=True)
@@ -18,13 +16,23 @@ class CanvasSpec:
 
 
 @dataclass(slots=True)
+class RepeatSpec:
+    """Configuration for rendering an element repeatedly over a data collection."""
+
+    items: str
+    alias: str
+    index: str | None = None
+    let: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
 class ElementSpec:
     """Declarative description of a single SVG element."""
 
     type: str
     attributes: MutableMapping[str, str] = field(default_factory=dict)
     text: str | None = None
-    scope: Scope = "item"
+    repeat: RepeatSpec | None = None
     children: list["ElementSpec"] = field(default_factory=list)
 
 
@@ -34,9 +42,8 @@ class TemplateSpec:
 
     source_path: Path
     canvas: CanvasSpec
-    elements: list[ElementSpec]
-    formulas: Mapping[str, str]
-    variables: Mapping[str, Any] = field(default_factory=dict)
+    template: list[ElementSpec]
+    let_bindings: Mapping[str, Any] = field(default_factory=dict)
     num_elements_range: tuple[int, int] | None = None
     schema: Mapping[str, Any] | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
