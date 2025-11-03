@@ -21,7 +21,7 @@ def sample_template(tmp_path):
                 attributes={"x": "{__index__ * gap}", "y": "20", "fontSize": "12"},
                 text="{label}: {double}",
                 repeat=RepeatSpec(
-                    items="data",
+                    items="items",
                     alias="item",
                 ),
                 let={
@@ -35,16 +35,40 @@ def sample_template(tmp_path):
             "canvas": {"width": 200, "height": 100},
             "gap": 24,
         },
-        num_elements_range=(1, 5),
+        schema={
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "required": ["items"],
+            "additionalProperties": False,
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "items": {
+                        "type": "object",
+                        "required": ["label", "value"],
+                        "properties": {
+                            "label": {"type": "string"},
+                            "value": {"type": "number"},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        },
     )
 
 
 def test_render_combines_canvas_and_items(sample_template):
     renderer = InfogrooveRenderer(sample_template)
-    svg_markup = renderer.render([
-        {"label": "A", "value": 3},
-        {"label": "B", "value": 4},
-    ])
+    payload = {
+        "items": [
+            {"label": "A", "value": 3},
+            {"label": "B", "value": 4},
+        ]
+    }
+    svg_markup = renderer.render(payload)
 
     assert "class=\"chart\"" in svg_markup
     assert "A: 6" in svg_markup
@@ -54,12 +78,14 @@ def test_render_combines_canvas_and_items(sample_template):
 
 def test_build_base_context_computes_metrics(sample_template):
     renderer = InfogrooveRenderer(sample_template)
-    dataset = [
-        {"label": "A", "value": 5},
-        {"label": "B", "value": 15},
-    ]
+    payload = {
+        "items": [
+            {"label": "A", "value": 5},
+            {"label": "B", "value": 15},
+        ]
+    }
 
-    context = renderer._build_base_context(dataset)
+    context = renderer._build_base_context(payload)
 
     assert context["canvas"]["width"] == 200
     assert context["canvas"]["height"] == 100
@@ -71,9 +97,9 @@ def test_build_base_context_computes_metrics(sample_template):
 
 def test_repeat_context_injects_reserved_variables(sample_template):
     renderer = InfogrooveRenderer(sample_template)
-    base_context = renderer._build_base_context([
-        {"label": "Hello", "value": 2},
-    ])
+    base_context = renderer._build_base_context(
+        {"items": [{"label": "Hello", "value": 2}]}
+    )
     repeat = sample_template.template[1].repeat
     assert repeat is not None
 
@@ -146,10 +172,9 @@ def test_repeat_let_override_is_scoped(tmp_path):
 
 def test_repeat_alias_reserved_helpers_progress(sample_template):
     renderer = InfogrooveRenderer(sample_template)
-    base_context = renderer._build_base_context([
-        {"label": "A", "value": 1},
-        {"label": "B", "value": 2},
-    ])
+    base_context = renderer._build_base_context(
+        {"items": [{"label": "A", "value": 1}, {"label": "B", "value": 2}]}
+    )
     repeat = sample_template.template[1].repeat
     assert repeat is not None
 
@@ -183,20 +208,20 @@ def test_repeat_alias_reserved_helpers_progress(sample_template):
     assert second_alias["__last__"] is True
 
 
-def test_validate_data_checks_sequence(sample_template):
+def test_validate_data_enforces_object_schema(sample_template):
     renderer = InfogrooveRenderer(sample_template)
 
-    with pytest.raises(DataValidationError, match="sequence of mappings"):
-        renderer._validate_data({"not": "a sequence"})
+    payload = {"items": [{"label": "A", "value": 1}]}
+    assert renderer._validate_data(payload) == payload
 
-    with pytest.raises(DataValidationError, match="must be a mapping"):
-        renderer._validate_data([{"ok": 1}, 2])
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data({})
 
-    with pytest.raises(DataValidationError, match="at least 1"):
-        renderer._validate_data([])
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data({"items": []})
 
-    with pytest.raises(DataValidationError, match="at most 5"):
-        renderer._validate_data([{"value": 1}] * 6)
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data([{"label": "A", "value": 1}])
 
 
 def test_append_rejects_unknown_element(sample_template):
@@ -218,23 +243,113 @@ def test_validate_data_uses_json_schema(sample_template):
         canvas=sample_template.canvas,
         template=list(sample_template.template),
         properties=dict(sample_template.properties),
-        num_elements_range=sample_template.num_elements_range,
         schema={
             "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
             "items": {
                 "type": "object",
-                "properties": {"value": {"type": "number"}},
-                "required": ["value"],
+                "properties": {
+                    "value": {"type": "number"},
+                    "label": {"type": "string"},
+                },
+                "required": ["value", "label"],
+                "additionalProperties": False,
             },
         },
     )
     renderer = InfogrooveRenderer(template_with_schema)
 
-    valid = renderer._validate_data([{"value": 3}])
-    assert valid == [{"value": 3}]
+    valid = renderer._validate_data([{"value": 3, "label": "ok"}])
+    assert valid == [{"value": 3, "label": "ok"}]
 
     with pytest.raises(DataValidationError, match="schema"):
         renderer._validate_data([{"value": "bad"}])
+
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data([{"label": "missing value"}])
+
+
+def test_validate_data_schema_supports_nested_collections(tmp_path):
+    template = TemplateSpec(
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=100, height=100),
+        template=[
+            ElementSpec(
+                type="g",
+                repeat=RepeatSpec(items="data", alias="entry"),
+                children=[
+                    ElementSpec(
+                        type="g",
+                        repeat=RepeatSpec(items="entry.points", alias="point"),
+                    )
+                ],
+            )
+        ],
+        properties={"canvas": {"width": 100, "height": 100}},
+        schema={
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": ["label", "values", "points"],
+                "additionalProperties": False,
+                "properties": {
+                    "label": {"type": "string"},
+                    "values": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {"type": "number"},
+                    },
+                    "points": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "required": ["x", "y"],
+                            "additionalProperties": False,
+                            "properties": {
+                                "x": {"type": "number"},
+                                "y": {"type": "number"},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    )
+    renderer = InfogrooveRenderer(template)
+
+    valid_payload = [
+        {
+            "label": "A",
+            "values": [1, 3, 5],
+            "points": [{"x": 0, "y": 0}, {"x": 1.5, "y": 2}],
+        }
+    ]
+    assert renderer._validate_data(valid_payload) == valid_payload
+
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data(
+            [
+                {
+                    "label": "A",
+                    "values": [],
+                    "points": [{"x": 0, "y": 0}],
+                }
+            ]
+        )
+
+    with pytest.raises(DataValidationError, match="schema"):
+        renderer._validate_data(
+            [
+                {
+                    "label": "A",
+                    "values": [1, 2],
+                    "points": [{"x": 0}],
+                }
+            ]
+        )
 
 
 def test_infogroove_factory_returns_renderer(sample_template):

@@ -25,7 +25,7 @@ def make_template_payload(**overrides):
                 "attributes": {"x": "0", "y": "0"},
                 "text": "{label}",
                 "repeat": {
-                    "items": "data",
+                    "items": "items",
                     "as": "item",
                 },
                 "let": {
@@ -34,8 +34,27 @@ def make_template_payload(**overrides):
                 },
             },
         ],
-        "numElementsRange": [1, 3],
-        "schema": {"type": "array"},
+        "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "required": ["items"],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {"type": "string"},
+                            "value": {"type": "number"},
+                        },
+                        "required": ["label", "value"],
+                        "additionalProperties": False,
+                    },
+                }
+            },
+        },
         "name": "Example",
         "description": "Demo",
         "version": "1.0",
@@ -46,7 +65,8 @@ def make_template_payload(**overrides):
 
 def test_load_path_returns_renderer(tmp_path):
     template_path = tmp_path / "def.json"
-    template_path.write_text(json.dumps(make_template_payload()), encoding="utf-8")
+    payload = make_template_payload()
+    template_path.write_text(json.dumps(payload), encoding="utf-8")
 
     renderer = load_path(template_path)
 
@@ -59,8 +79,8 @@ def test_load_path_returns_renderer(tmp_path):
     assert template.template[1].repeat is not None
     assert template.properties["color"] == "#fff"
     assert template.properties["canvas"]["height"] == 600
-    assert template.num_elements_range == (1, 3)
-    assert template.schema == {"type": "array"}
+    assert template.schema == payload["schema"]
+    assert template.expected_range() == (1, 3)
     assert template.metadata == {
         "name": "Example",
         "description": "Demo",
@@ -127,6 +147,7 @@ def test_parse_template_requires_canvas_dimensions(tmp_path):
             "Repeat declarations only accept 'items' and 'as'",
         ),
         (lambda payload: payload.update({"styles": {}}), "'styles' is no longer supported"),
+        (lambda payload: payload.update({"schema": "oops"}), "'schema' must be declared as a mapping"),
     ],
 )
 def test_parse_template_validation_errors(tmp_path, mutator, message):
@@ -137,3 +158,43 @@ def test_parse_template_validation_errors(tmp_path, mutator, message):
         _parse_template(tmp_path / "def.json", payload)
 
     assert message in str(exc.value)
+
+
+def test_parse_template_invalid_schema_definition(tmp_path):
+    payload = make_template_payload()
+    payload["schema"]["type"] = "invalid-type"
+
+    with pytest.raises(TemplateError) as exc:
+        _parse_template(tmp_path / "def.json", payload)
+
+    assert "schema definition is invalid" in str(exc.value)
+
+
+def test_parse_template_schema_derives_expected_range(tmp_path):
+    payload = make_template_payload()
+    payload["schema"]["properties"]["items"]["minItems"] = 2
+    payload["schema"]["properties"]["items"]["maxItems"] = 4
+
+    template = _parse_template(tmp_path / "def.json", payload)
+
+    assert template.expected_range() == (2, 4)
+
+
+def test_parse_template_schema_supports_partial_bounds(tmp_path):
+    payload = make_template_payload()
+    payload["schema"]["properties"]["items"].pop("maxItems")
+    payload["schema"]["properties"]["items"]["minItems"] = 2
+
+    template = _parse_template(tmp_path / "def.json", payload)
+
+    assert template.expected_range() == (2, None)
+
+
+def test_parse_template_rejects_legacy_num_elements_range(tmp_path):
+    payload = make_template_payload()
+    payload["numElementsRange"] = [1, 3]
+
+    with pytest.raises(TemplateError) as exc:
+        _parse_template(tmp_path / "def.json", payload)
+
+    assert "no longer supported" in str(exc.value)
