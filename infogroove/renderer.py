@@ -236,10 +236,6 @@ class InfogrooveRenderer:
             alias_binding = ensure_accessible(alias_payload)
         else:
             alias_binding = ensure_accessible(item)
-        if repeat.index:
-            frame[repeat.index] = index
-            if isinstance(alias_binding, MappingAdapter) and repeat.index not in alias_binding:
-                alias_binding._mapping.setdefault(repeat.index, index)  # type: ignore[attr-defined]
         frame["__index__"] = index
         frame["__first__"] = index == 0
         frame["__last__"] = index == total - 1
