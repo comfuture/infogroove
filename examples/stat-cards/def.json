@@ -1,7 +1,7 @@
 {
   "name": "Stat Cards",
   "description": "Displays KPI cards with coloured accents.",
-  "variables": {
+  "let": {
     "canvas": {
       "width": 1024,
       "height": 600
@@ -24,24 +24,9 @@
     ]
   },
   "numElementsRange": [1, 8],
-  "formulas": {
-    "cardsPerRow": "max(1, min(total, 3))",
-    "row": "index // cardsPerRow",
-    "column": "index % cardsPerRow",
-    "cardX": "margin + column * (cardWidth + cardGap)",
-    "cardY": "margin + row * (cardHeight + cardGap)",
-    "accentColor": "accentColors[index % accentColors.length]",
-    "titleX": "cardX + 20",
-    "titleY": "cardY + 36",
-    "valueX": "cardX + 20",
-    "valueY": "cardY + 82",
-    "deltaX": "cardX + 20",
-    "deltaY": "cardY + 112"
-  },
-  "elements": [
+  "template": [
     {
       "type": "rect",
-      "scope": "canvas",
       "attributes": {
         "x": "0",
         "y": "0",
@@ -51,63 +36,90 @@
       }
     },
     {
-      "type": "rect",
-      "attributes": {
-        "x": "{cardX}",
-        "y": "{cardY}",
-        "width": "{cardWidth}",
-        "height": "{cardHeight}",
-        "fill": "{cardBackground}",
-        "rx": "20"
-      }
-    },
-    {
-      "type": "rect",
-      "attributes": {
-        "x": "{cardX}",
-        "y": "{cardY}",
-        "width": "6",
-        "height": "{cardHeight}",
-        "fill": "{accentColor}",
-        "rx": "6"
-      }
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{titleX}",
-        "y": "{titleY}",
-        "fill": "{titleColor}",
-        "fontSize": "18",
-        "fontFamily": "{fontFamily}",
-        "dominantBaseline": "middle"
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry",
+        "index": "idx",
+        "let": {
+          "title": "entry.title",
+          "value": "entry.value",
+          "delta": "entry.delta",
+          "cardsPerRow": "max(1, min(total, 3))",
+          "row": "idx // cardsPerRow",
+          "column": "idx % cardsPerRow",
+          "cardX": "margin + column * (cardWidth + cardGap)",
+          "cardY": "margin + row * (cardHeight + cardGap)",
+          "accentColor": "accentColors[idx % accentColors.length]",
+          "titleX": "cardX + 20",
+          "titleY": "cardY + 36",
+          "valueX": "cardX + 20",
+          "valueY": "cardY + 82",
+          "deltaX": "cardX + 20",
+          "deltaY": "cardY + 112"
+        }
       },
-      "text": "{title}"
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{valueX}",
-        "y": "{valueY}",
-        "fill": "{valueColor}",
-        "fontSize": "40",
-        "fontFamily": "{fontFamily}",
-        "fontWeight": "700",
-        "dominantBaseline": "middle"
-      },
-      "text": "{value}"
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{deltaX}",
-        "y": "{deltaY}",
-        "fill": "{deltaColor}",
-        "fontSize": "16",
-        "fontFamily": "{fontFamily}",
-        "dominantBaseline": "middle"
-      },
-      "text": "{delta}"
+      "children": [
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{cardX}",
+            "y": "{cardY}",
+            "width": "{cardWidth}",
+            "height": "{cardHeight}",
+            "fill": "{cardBackground}",
+            "rx": "20"
+          }
+        },
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{cardX}",
+            "y": "{cardY}",
+            "width": "6",
+            "height": "{cardHeight}",
+            "fill": "{accentColor}",
+            "rx": "6"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{titleX}",
+            "y": "{titleY}",
+            "fill": "{titleColor}",
+            "fontSize": "18",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{title}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{valueX}",
+            "y": "{valueY}",
+            "fill": "{valueColor}",
+            "fontSize": "40",
+            "fontFamily": "{fontFamily}",
+            "fontWeight": "700",
+            "dominantBaseline": "middle"
+          },
+          "text": "{value}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{deltaX}",
+            "y": "{deltaY}",
+            "fill": "{deltaColor}",
+            "fontSize": "16",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{delta}"
+        }
+      ]
     }
   ]
 }

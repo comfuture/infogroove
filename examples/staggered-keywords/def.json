@@ -1,7 +1,7 @@
 {
   "name": "Alternating Keyword Timeline",
   "description": "Aligns keyword/description pairs on alternating sides of a central axis.",
-  "variables": {
+  "let": {
     "canvas": {
       "width": 960,
       "height": 720
@@ -18,22 +18,9 @@
     "descriptionColor": "#4b5563",
     "badgeFill": "#e0f2fe"
   },
-  "formulas": {
-    "y": "marginTop + index * rowSpacing",
-    "isEven": "index % 2",
-    "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
-    "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
-    "keywordAnchor": "'start' if isEven == 0 else 'end'",
-    "descriptionAnchor": "'end' if isEven == 0 else 'start'",
-    "badgeX": "keywordX",
-    "badgeY": "y - 36",
-    "connectorX1": "axisX",
-    "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
-  },
-  "elements": [
+  "template": [
     {
       "type": "rect",
-      "scope": "canvas",
       "attributes": {
         "x": "0",
         "y": "0",
@@ -44,7 +31,6 @@
     },
     {
       "type": "line",
-      "scope": "canvas",
       "attributes": {
         "x1": "{axisX}",
         "y1": "0",
@@ -56,51 +42,75 @@
       }
     },
     {
-      "type": "line",
-      "attributes": {
-        "x1": "{connectorX1}",
-        "y1": "{y}",
-        "x2": "{connectorX2}",
-        "y2": "{y}",
-        "stroke": "{axisColor}",
-        "strokeWidth": "3"
-      }
-    },
-    {
-      "type": "rect",
-      "attributes": {
-        "x": "{badgeX} - 60",
-        "y": "{badgeY}",
-        "width": "120",
-        "height": "32",
-        "fill": "{badgeFill}",
-        "rx": "16"
-      }
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{keywordX}",
-        "y": "{y} - 12",
-        "fill": "{keywordColor}",
-        "fontFamily": "{fontFamily}",
-        "fontSize": "24",
-        "fontWeight": "600",
-        "textAnchor": "{keywordAnchor}"
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry",
+        "index": "idx",
+        "let": {
+          "keyword": "entry.keyword",
+          "description": "entry.description",
+          "y": "marginTop + idx * rowSpacing",
+          "isEven": "idx % 2",
+          "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
+          "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
+          "keywordAnchor": "'start' if isEven == 0 else 'end'",
+          "descriptionAnchor": "'end' if isEven == 0 else 'start'",
+          "badgeX": "keywordX",
+          "badgeY": "y - 36",
+          "connectorX1": "axisX",
+          "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
+        }
       },
-      "text": "{keyword}"
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{descriptionX}",
-        "y": "{y} + 18",
-        "fill": "{descriptionColor}",
-        "fontFamily": "{fontFamily}",
-        "fontSize": "18",
-        "textAnchor": "{descriptionAnchor}"
-      },
-      "text": "{description}"
+      "children": [
+        {
+          "type": "line",
+          "attributes": {
+            "x1": "{connectorX1}",
+            "y1": "{y}",
+            "x2": "{connectorX2}",
+            "y2": "{y}",
+            "stroke": "{axisColor}",
+            "strokeWidth": "3"
+          }
+        },
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{badgeX} - 60",
+            "y": "{badgeY}",
+            "width": "120",
+            "height": "32",
+            "fill": "{badgeFill}",
+            "rx": "16"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{keywordX}",
+            "y": "{y} - 12",
+            "fill": "{keywordColor}",
+            "fontFamily": "{fontFamily}",
+            "fontSize": "24",
+            "fontWeight": "600",
+            "textAnchor": "{keywordAnchor}"
+          },
+          "text": "{keyword}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{descriptionX}",
+            "y": "{y} + 18",
+            "fill": "{descriptionColor}",
+            "fontFamily": "{fontFamily}",
+            "fontSize": "18",
+            "textAnchor": "{descriptionAnchor}"
+          },
+          "text": "{description}"
+        }
+      ]
     }
   ]
 }

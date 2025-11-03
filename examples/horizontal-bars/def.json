@@ -1,7 +1,7 @@
 {
   "name": "Horizontal Bar Chart",
   "description": "Renders a horizontal bar chart with labels and values.",
-  "variables": {
+  "let": {
     "canvas": {
       "width": 960,
       "height": 540
@@ -23,20 +23,9 @@
     ]
   },
   "numElementsRange": [1, 12],
-  "formulas": {
-    "colorIndex": "index % colors.length",
-    "barColor": "colors[colorIndex]",
-    "barX": "margin",
-    "spanWidth": "canvas.width - 2 * margin",
-    "barWidth": "spanWidth * (value / maxValue)",
-    "barY": "margin + index * (barHeight + barGap)",
-    "labelY": "barY + (barHeight / 2)",
-    "valueX": "barX + barWidth + valueGap"
-  },
-  "elements": [
+  "template": [
     {
       "type": "rect",
-      "scope": "canvas",
       "attributes": {
         "x": "0",
         "y": "0",
@@ -46,40 +35,62 @@
       }
     },
     {
-      "type": "rect",
-      "attributes": {
-        "x": "{barX}",
-        "y": "{barY}",
-        "width": "{barWidth}",
-        "height": "{barHeight}",
-        "fill": "{barColor}",
-        "rx": "8",
-        "ry": "8"
-      }
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{barX}",
-        "y": "{labelY}",
-        "fill": "{textColor}",
-        "fontSize": "20",
-        "fontFamily": "{fontFamily}",
-        "dominantBaseline": "middle"
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry",
+        "index": "idx",
+        "let": {
+          "label": "entry.label",
+          "value": "entry.value",
+          "colorIndex": "idx % colors.length",
+          "barColor": "colors[colorIndex]",
+          "barX": "margin",
+          "spanWidth": "canvas.width - 2 * margin",
+          "barWidth": "spanWidth * (value / maxValue)",
+          "barY": "margin + idx * (barHeight + barGap)",
+          "labelY": "barY + (barHeight / 2)",
+          "valueX": "barX + barWidth + valueGap"
+        }
       },
-      "text": "{label}"
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{valueX}",
-        "y": "{labelY}",
-        "fill": "{valueColor}",
-        "fontSize": "18",
-        "fontFamily": "{fontFamily}",
-        "dominantBaseline": "middle"
-      },
-      "text": "{value}"
+      "children": [
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{barX}",
+            "y": "{barY}",
+            "width": "{barWidth}",
+            "height": "{barHeight}",
+            "fill": "{barColor}",
+            "rx": "8",
+            "ry": "8"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{barX}",
+            "y": "{labelY}",
+            "fill": "{textColor}",
+            "fontSize": "20",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{label}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{valueX}",
+            "y": "{labelY}",
+            "fill": "{valueColor}",
+            "fontSize": "18",
+            "fontFamily": "{fontFamily}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{value}"
+        }
+      ]
     }
   ]
 }
