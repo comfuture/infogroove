@@ -11,7 +11,7 @@
     "marginLeft": 40,
     "marginRight": 40,
     "skew": 28,
-    "fontFamily": "Inter, Arial, sans-serif",
+    "fontFamily": "'Inter, Arial, sans-serif'",
     "titleColor": "#0f172a",
     "valueColor": "#1e3a8a",
     "colors": [

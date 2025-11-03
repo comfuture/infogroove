@@ -15,7 +15,7 @@
     "titleColor": "#e2e8f0",
     "valueColor": "#f8fafc",
     "deltaColor": "#94a3b8",
-    "fontFamily": "Inter, Arial, sans-serif",
+    "fontFamily": "'Inter, Arial, sans-serif'",
     "accentColors": [
       "#38bdf8",
       "#34d399",

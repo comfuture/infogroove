@@ -12,7 +12,7 @@
     "arcOffset": 60,
     "bubbleRadius": 48,
     "radiusLabelOffset": 72,
-    "fontFamily": "Inter, Arial, sans-serif",
+    "fontFamily": "'Inter, Arial, sans-serif'",
     "labelColor": "#0f172a",
     "valueColor": "#1e3a8a",
     "palette": [

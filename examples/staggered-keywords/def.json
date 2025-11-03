@@ -13,7 +13,7 @@
     "keywordPadding": 24,
     "connectorLength": 140,
     "axisColor": "#cbd5f5",
-    "fontFamily": "Inter, Arial, sans-serif",
+    "fontFamily": "'Inter, Arial, sans-serif'",
     "keywordColor": "#1f2937",
     "descriptionColor": "#4b5563",
     "badgeFill": "#e0f2fe"

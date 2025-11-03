@@ -10,7 +10,7 @@
     "gap": 32,
     "background": "#120613",
     "cardRadius": 28,
-    "fontFamily": "'Inter', 'Pretendard', Arial, sans-serif",
+    "fontFamily": "\"'Inter', 'Pretendard', Arial, sans-serif\"",
     "leadGradientStart": "#ff2d95",
     "leadGradientEnd": "#b5147a",
     "cardGradientStart": "#ff9ad1",

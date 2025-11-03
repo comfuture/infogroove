@@ -10,7 +10,7 @@
     "barHeight": 38,
     "barGap": 20,
     "valueGap": 12,
-    "fontFamily": "Inter, Arial, sans-serif",
+    "fontFamily": "'Inter, Arial, sans-serif'",
     "background": "#ffffff",
     "textColor": "#111827",
     "valueColor": "#2563eb",
