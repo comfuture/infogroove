@@ -336,49 +336,54 @@ class InfogrooveRenderer:
             if not candidate:
                 raise RenderError(f"Renderer output '{label}' must not be empty")
             tag = str(candidate[0])
-            attrs: Mapping[str, Any] = {}
-            text_value: str | None = None
-            children_payload: Any = []
-            if len(candidate) >= 2:
-                second = candidate[1]
-                if isinstance(second, Mapping):
-                    attrs = second
-                elif isinstance(second, Sequence) and not isinstance(second, (str, bytes)):
-                    children_payload = second
-                elif second is None:
-                    children_payload = []
-                else:
-                    text_value = str(second)
-            if len(candidate) >= 3:
-                third = candidate[2]
-                if isinstance(third, Sequence) and not isinstance(third, (str, bytes)):
-                    children_payload = third
-                elif third is None:
-                    children_payload = []
-                elif text_value is None:
-                    text_value = str(third)
-                else:
-                    raise RenderError(
-                        f"Renderer output '{label}' cannot encode multiple text values"
-                    )
-            if len(candidate) >= 4:
-                fourth = candidate[3]
-                if isinstance(fourth, Sequence) and not isinstance(fourth, (str, bytes)):
-                    children_payload = fourth
-                elif fourth is None:
-                    children_payload = []
-                else:
-                    raise RenderError(
-                        f"Renderer output '{label}' children must be a sequence when provided"
-                    )
-            if len(candidate) > 4:
+            extras = list(candidate[1:])
+            if len(extras) > 3:
                 raise RenderError(
                     f"Renderer output '{label}' contains unexpected positional values"
                 )
+
+            attrs_block: Mapping[str, Any] | None = None
+            text_value: str | None = None
+            children_payload: Any | None = None
+
+            for value in extras:
+                if isinstance(value, Mapping):
+                    if attrs_block is not None:
+                        raise RenderError(
+                            f"Renderer output '{label}' cannot declare multiple attribute blocks"
+                        )
+                    attrs_block = value
+                    continue
+
+                if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+                    if children_payload is not None:
+                        raise RenderError(
+                            f"Renderer output '{label}' cannot declare multiple children blocks"
+                        )
+                    children_payload = value
+                    continue
+
+                if value is None:
+                    if children_payload is not None:
+                        raise RenderError(
+                            f"Renderer output '{label}' cannot declare multiple children blocks"
+                        )
+                    children_payload = []
+                    continue
+
+                if text_value is not None:
+                    raise RenderError(
+                        f"Renderer output '{label}' cannot encode multiple text values"
+                    )
+                text_value = str(value)
+
             node: NodeSpec = {
                 "type": tag,
-                "attributes": dict(attrs),
-                "children": self._coerce_children(children_payload, f"{label}.children"),
+                "attributes": dict(attrs_block or {}),
+                "children": self._coerce_children(
+                    children_payload if children_payload is not None else [],
+                    f"{label}.children",
+                ),
             }
             if text_value is not None:
                 node["text"] = text_value
