@@ -150,11 +150,11 @@ class InfogrooveRenderer:
 
         return self._template
 
-    def render(self, data: Sequence[Mapping[str, Any]]) -> str:
+    def render(self, data: Any) -> str:
         """Render the template with the supplied data and return SVG markup."""
 
-        dataset = self._validate_data(data)
-        base_context = self._build_base_context(dataset)
+        payload = self._validate_data(data)
+        base_context = self._build_base_context(payload)
         canvas_context = base_context.get("canvas")
         width = self._template.canvas.width
         height = self._template.canvas.height
@@ -277,16 +277,37 @@ class InfogrooveRenderer:
 
         return node
 
-    def _build_base_context(self, dataset: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-        length = len(dataset)
-        accessible_data = ensure_accessible(dataset)
-        values = [
-            item.get("value")
-            for item in dataset
-            if isinstance(item, Mapping) and isinstance(item.get("value"), (int, float))
-        ]
+    def _build_base_context(self, payload: Any) -> dict[str, Any]:
+        context: dict[str, Any] = {}
+        accessible_payload = ensure_accessible(payload)
+        context["data"] = accessible_payload
+        context["payload"] = accessible_payload
+
+        primary_sequence: Sequence[Any] | None = None
+        sequence_length: int | None = None
+
+        if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
+            primary_sequence = payload
+            sequence_length = len(payload)
+            context["items"] = ensure_accessible(payload)
+        elif isinstance(payload, Mapping):
+            for key, value in payload.items():
+                context[key] = ensure_accessible(value)
+            default_items = payload.get("items")
+            if isinstance(default_items, Sequence) and not isinstance(default_items, (str, bytes)):
+                primary_sequence = default_items
+                sequence_length = len(default_items)
+                context.setdefault("items", ensure_accessible(default_items))
 
         metrics: dict[str, Any] = {}
+        values: list[float] = []
+        if primary_sequence is not None:
+            for item in primary_sequence:
+                if isinstance(item, Mapping):
+                    candidate = item.get("value")
+                    if isinstance(candidate, (int, float)):
+                        values.append(candidate)
+
         if values:
             metrics.update(
                 {
@@ -298,13 +319,12 @@ class InfogrooveRenderer:
                 }
             )
 
-        context: dict[str, Any] = {
-            "data": accessible_data,
-            "items": accessible_data,
-            "total": length,
-            "count": length,
-            **metrics,
-        }
+        if sequence_length is not None:
+            metrics.setdefault("total", sequence_length)
+            metrics.setdefault("count", sequence_length)
+
+        if metrics:
+            context.update(metrics)
 
         properties = dict(self._template.properties)
 
@@ -421,31 +441,29 @@ class InfogrooveRenderer:
     def _make_accessible_bindings(bindings: Mapping[str, Any]) -> dict[str, Any]:
         return {key: ensure_accessible(value) for key, value in bindings.items()}
 
-    def _validate_data(self, data: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-        if not isinstance(data, Sequence):
-            raise DataValidationError("Input data must be an ordered sequence of mappings")
-        dataset = list(data)
-        if not all(isinstance(item, Mapping) for item in dataset):
-            raise DataValidationError("Each data item must be a mapping")
-
+    def _validate_data(self, data: Any) -> Any:
         minimum, maximum = self._template.expected_range()
-        count = len(dataset)
-        if minimum is not None and count < minimum:
-            raise DataValidationError(f"Template requires at least {minimum} items (received {count})")
-        if maximum is not None and count > maximum:
-            raise DataValidationError(f"Template accepts at most {maximum} items (received {count})")
+        if isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+            if not all(isinstance(item, Mapping) for item in data):
+                raise DataValidationError("Each data item must be a mapping")
+            if minimum is not None or maximum is not None:
+                count = len(data)
+                if minimum is not None and count < minimum:
+                    raise DataValidationError(f"Template requires at least {minimum} items (received {count})")
+                if maximum is not None and count > maximum:
+                    raise DataValidationError(f"Template accepts at most {maximum} items (received {count})")
 
         schema = self._template.schema
         if schema is not None:
             try:
-                validate_jsonschema(dataset, schema)
+                validate_jsonschema(data, schema)
             except JSONSchemaValidationError as exc:
                 raise DataValidationError(
                     f"Input data does not satisfy the template schema: {exc.message}"
                 ) from exc
             except SchemaError as exc:
                 raise DataValidationError("Template schema definition is invalid") from exc
-        return dataset
+        return data
 
     @staticmethod
     def _normalise_attribute_key(key: str) -> str:

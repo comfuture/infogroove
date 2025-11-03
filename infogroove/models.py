@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping
 
+from .utils import derive_schema_item_bounds
+
 
 @dataclass(slots=True)
 class CanvasSpec:
@@ -44,13 +46,12 @@ class TemplateSpec:
     canvas: CanvasSpec
     template: list[ElementSpec]
     properties: Mapping[str, Any] = field(default_factory=dict)
-    num_elements_range: tuple[int, int] | None = None
     schema: Mapping[str, Any] | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def expected_range(self) -> tuple[int | None, int | None]:
         """Return the expected minimum and maximum item counts for consumers."""
 
-        if self.num_elements_range is None:
+        if self.schema is None:
             return (None, None)
-        return self.num_elements_range
+        return derive_schema_item_bounds(self.schema)
