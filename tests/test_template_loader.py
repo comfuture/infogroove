@@ -27,10 +27,9 @@ def make_template_payload(**overrides):
                 "repeat": {
                     "items": "data",
                     "as": "item",
-                    "index": "idx",
                     "let": {
                         "label": "item.label",
-                        "line": "f'{idx + 1}. {item.label}'",
+                        "line": "f'{__index__ + 1}. {item.label}'",
                     },
                 },
             },

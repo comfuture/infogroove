@@ -82,10 +82,9 @@ The `repeat` block explicitly controls iteration:
   "repeat": {
     "items": "items",
     "as": "row",
-    "index": "idx",
     "let": {
       "label": "row.label",
-      "x": "idx * 24"
+      "x": "__index__ * 24"
     }
   },
   "attributes": {"x": "{x}", "y": "40"},
@@ -95,8 +94,10 @@ The `repeat` block explicitly controls iteration:
 
 - `items` references the collection to iterate (any dotted path resolved via
   `let`/data access).
-- `as` names the current element, while the optional `index` binding exposes
-  the zero-based position.
+- `as` names the current element. Use the reserved helpers (e.g. `__index__`,
+  `__count__`) inside expressions when you need positional data; when the
+  iterated item is a mapping, those helpers are also exposed on the alias (for
+  example, `row.__index__`).
 - `let` injects per-iteration bindings scoped to that repeat. Expressions can
   reference the current item, previously declared loop bindings, and globals.
 
@@ -104,7 +105,7 @@ During iteration, Infogroove also injects reserved helpers such as `__index__`,
 `__first__`, `__last__`, `__count__`, and `__total__` for convenience.
 
 Placeholder syntax supports both `{path.to.value}` lookups and inline Python
-expressions such as `{idx * 10}` or `{canvas.width / 2}`. Expressions are
+expressions such as `{__index__ * 10}` or `{canvas.width / 2}`. Expressions are
 evaluated inside the same safe context as loop bindings (global let values,
 data fields, derived metrics, and loop-scoped bindings).
 
@@ -154,8 +155,8 @@ infographic = Infogroove({
     "template": [
         {
             "type": "circle",
-            "attributes": {"cx": "{idx * gap}", "cy": "20", "r": "5"},
-            "repeat": {"items": "data", "as": "item", "index": "idx"}
+            "attributes": {"cx": "{__index__ * gap}", "cy": "20", "r": "5"},
+            "repeat": {"items": "data", "as": "item"}
         }
     ],
 })
@@ -169,7 +170,7 @@ svg_inline = infographic.render([{}] * 10)
   `let` block.
 - Use `repeat` to make iteration explicit; push derived per-loop values into
   its `let` bindings so they stay scoped to that block.
-- Inline expressions handle quick maths (`{idx * 10}`) while `repeat.let`
+- Inline expressions handle quick maths (`{__index__ * 10}`) while `repeat.let`
   bindings are ideal for shared or multi-step calculations.
 - Let bindings resolve lazily, so the order you declare keys does not matter.
   However, circular definitions (e.g. `total: "max"`, `max: "total"`) will be

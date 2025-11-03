@@ -31,7 +31,7 @@ from svg import (
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
 from .formula import FormulaEngine
 from .models import ElementSpec, RepeatSpec, TemplateSpec
-from .utils import ensure_accessible, fill_placeholders, resolve_path, to_snake_case
+from .utils import MappingAdapter, ensure_accessible, fill_placeholders, resolve_path, to_snake_case
 
 SUPPORTED_ELEMENTS = {
     "rect": Rect,
@@ -225,14 +225,28 @@ class InfogrooveRenderer:
         total: int,
     ) -> dict[str, Any]:
         frame = dict(parent_context)
-        frame[repeat.alias] = ensure_accessible(item)
+        alias_binding: Any
+        if isinstance(item, Mapping):
+            alias_payload = dict(item)
+            alias_payload.setdefault("__index__", index)
+            alias_payload.setdefault("__count__", index + 1)
+            alias_payload.setdefault("__total__", total)
+            alias_payload.setdefault("__first__", index == 0)
+            alias_payload.setdefault("__last__", index == total - 1)
+            alias_binding = ensure_accessible(alias_payload)
+        else:
+            alias_binding = ensure_accessible(item)
         if repeat.index:
             frame[repeat.index] = index
+            if isinstance(alias_binding, MappingAdapter) and repeat.index not in alias_binding:
+                alias_binding._mapping.setdefault(repeat.index, index)  # type: ignore[attr-defined]
         frame["__index__"] = index
         frame["__first__"] = index == 0
         frame["__last__"] = index == total - 1
         frame["__total__"] = total
         frame["__count__"] = index + 1
+
+        frame[repeat.alias] = alias_binding
 
         if repeat.let:
             bindings = self._evaluate_bindings(repeat.let, frame, label=f"repeat:{repeat.alias}")

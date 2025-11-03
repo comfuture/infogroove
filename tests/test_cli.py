@@ -58,7 +58,6 @@ def test_main_renders_svg_end_to_end(tmp_path):
     data_path = tmp_path / "data.json"
     data_path.write_text(json.dumps([{"label": "Hello"}]), encoding="utf-8")
     output_path = tmp_path / "out.svg"
-
     exit_code = main(["-f", str(template_path), "-i", str(data_path), "-o", str(output_path)])
 
     assert exit_code == 0

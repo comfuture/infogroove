@@ -18,12 +18,11 @@ def sample_template(tmp_path):
             ),
             ElementSpec(
                 type="text",
-                attributes={"x": "{idx * gap}", "y": "20", "fontSize": "12"},
+                attributes={"x": "{__index__ * gap}", "y": "20", "fontSize": "12"},
                 text="{label}: {double}",
                 repeat=RepeatSpec(
                     items="data",
                     alias="item",
-                    index="idx",
                     let={
                         "label": "item.label",
                         "double": "item.value * 2",
@@ -207,9 +206,8 @@ def test_infogroove_factory_accepts_mapping():
                     "repeat": {
                         "items": "data",
                         "as": "row",
-                        "index": "idx",
                         "let": {
-                            "cx": "idx * gap",
+                            "cx": "__index__ * gap",
                         },
                     },
                 }
@@ -230,11 +228,11 @@ def test_render_supports_inline_attribute_expressions():
                 {
                     "type": "circle",
                     "attributes": {
-                        "cx": "{idx * 10}",
+                        "cx": "{__index__ * 10}",
                         "cy": "{canvas.height / 2}",
                         "r": "5",
                     },
-                    "repeat": {"items": "data", "as": "item", "index": "idx"},
+                    "repeat": {"items": "data", "as": "item"},
                 }
             ],
         }

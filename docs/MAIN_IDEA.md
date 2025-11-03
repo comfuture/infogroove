@@ -141,7 +141,7 @@ The renderer builds a base context that is shared by every element:
 
 For each row, the item context extends the base values with:
 
-- Index aliases: `index`, `idx`, `oneBasedIndex`, `position`.
+- Positional helpers: `__index__`, `__count__`, `__total__`, `oneBasedIndex`, `position`.
 - The raw item as `item` and `record`, plus top-level keys merged in.
 - A `label` fallback sourced from `text` or `label` when present.
 - A `value` fallback when the item only contains numeric fields.
