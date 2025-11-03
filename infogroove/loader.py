@@ -57,22 +57,22 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     """Convert JSON data into a strongly typed :class:`TemplateSpec`."""
 
     if "styles" in payload:
-        raise TemplateError("'styles' is no longer supported; move values under 'let'")
+        raise TemplateError("'styles' is no longer supported; move values under 'properties'")
     if "variables" in payload:
-        raise TemplateError("'variables' is no longer supported; move values under 'let'")
+        raise TemplateError("'variables' is no longer supported; move values under 'properties'")
+    if "let" in payload:
+        raise TemplateError("'let' has been renamed to 'properties'")
     if "elements" in payload:
         raise TemplateError("'elements' has been renamed to 'template'")
-    if "formulas" in payload:
-        raise TemplateError("'formulas' is no longer supported; use 'repeat.let'")
 
-    let_block = payload.get("let")
-    if not isinstance(let_block, Mapping):
-        raise TemplateError("'let' must be a mapping containing template bindings")
-    let_bindings = dict(let_block)
+    properties_block = payload.get("properties")
+    if not isinstance(properties_block, Mapping):
+        raise TemplateError("'properties' must be a mapping containing template bindings")
+    properties = dict(properties_block)
 
-    canvas_block = let_bindings.get("canvas")
+    canvas_block = properties.get("canvas")
     if not isinstance(canvas_block, Mapping):
-        raise TemplateError("'let.canvas' must be a mapping with width and height")
+        raise TemplateError("'properties.canvas' must be a mapping with width and height")
     width = canvas_block.get("width")
     height = canvas_block.get("height")
     if width is None or height is None:
@@ -87,7 +87,7 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     canvas_map = dict(canvas_block)
     canvas_map["width"] = canvas.width
     canvas_map["height"] = canvas.height
-    let_bindings["canvas"] = canvas_map
+    properties["canvas"] = canvas_map
 
     template_block = payload.get("template", [])
     if not isinstance(template_block, list):
@@ -111,7 +111,7 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
         source_path=path,
         canvas=canvas,
         template=template,
-        let_bindings=dict(let_bindings),
+        properties=dict(properties),
         num_elements_range=range_tuple,
         schema=schema_block,  # type: ignore[arg-type]
         metadata=metadata,
@@ -150,12 +150,16 @@ def _parse_element(entry: Any) -> ElementSpec:
             raise TemplateError("Repeat bindings require a string 'as' alias")
         if "index" in repeat_block:
             raise TemplateError("Repeat 'index' is no longer supported; use __index__ helper variables")
-        let_block = repeat_block.get("let", {})
-        if let_block is None:
-            let_block = {}
-        if not isinstance(let_block, Mapping):
-            raise TemplateError("Repeat 'let' bindings must be declared as a mapping when provided")
-        repeat = RepeatSpec(items=items, alias=alias, let=dict(let_block))
+        extra_keys = {key for key in repeat_block if key not in {"items", "as"}}
+        if extra_keys:
+            raise TemplateError("Repeat declarations only accept 'items' and 'as'; move derived values under the element 'let' block")
+        repeat = RepeatSpec(items=items, alias=alias)
+
+    let_block = entry.get("let", {})
+    if let_block is None:
+        let_block = {}
+    if not isinstance(let_block, Mapping):
+        raise TemplateError("Element 'let' bindings must be declared as a mapping when provided")
 
     children_block = entry.get("children", [])
     if children_block is None:
@@ -165,4 +169,4 @@ def _parse_element(entry: Any) -> ElementSpec:
     else:
         raise TemplateError("Element children must be declared as a list when provided")
 
-    return ElementSpec(type=element_type, attributes=attributes, text=text, repeat=repeat, children=children)
+    return ElementSpec(type=element_type, attributes=attributes, text=text, repeat=repeat, let=dict(let_block), children=children)

@@ -183,14 +183,20 @@ class InfogrooveRenderer:
                 rendered.extend(self._render_to_nodes(element, frame, ignore_repeat=True))
             return rendered
 
-        node = self._create_node(element, context)
+        working_context = dict(context)
+        if element.let:
+            bindings = self._evaluate_bindings(element.let, working_context, label=f"element:{element.type}")
+            accessible = self._make_accessible_bindings(bindings)
+            working_context.update(accessible)
+
+        node = self._create_node(element, working_context)
 
         if element.children:
             if not hasattr(node, "elements"):
                 raise RenderError(f"Element type '{element.type}' does not support nested children")
             child_nodes: list[Any] = []
             for child in element.children:
-                child_nodes.extend(self._render_to_nodes(child, context))
+                child_nodes.extend(self._render_to_nodes(child, working_context))
             existing = list(getattr(node, "elements", []) or [])
             node.elements = existing + child_nodes
 
@@ -244,20 +250,6 @@ class InfogrooveRenderer:
 
         frame[repeat.alias] = alias_binding
 
-        if repeat.let:
-            bindings = self._evaluate_bindings(repeat.let, frame, label=f"repeat:{repeat.alias}")
-            accessible_bindings = self._make_accessible_bindings(bindings)
-            frame.update(accessible_bindings)
-
-            parent_let = frame.get("let")
-            combined_let: dict[str, Any] = {}
-            if isinstance(parent_let, Mapping):
-                combined_let.update({key: parent_let[key] for key in parent_let})
-            combined_let.update(accessible_bindings)
-            let_adapter = ensure_accessible(combined_let)
-            frame["let"] = let_adapter
-            frame["variables"] = let_adapter
-
         return frame
 
     def _create_node(self, element: ElementSpec, context: Mapping[str, Any]) -> Any:
@@ -307,9 +299,9 @@ class InfogrooveRenderer:
             **metrics,
         }
 
-        global_bindings = self._evaluate_bindings(self._template.let_bindings, context, label="let")
+        properties = dict(self._template.properties)
 
-        canvas_binding = global_bindings.get("canvas")
+        canvas_binding = properties.get("canvas")
         if isinstance(canvas_binding, Mapping):
             canvas_dict = {key: canvas_binding[key] for key in canvas_binding}
         else:
@@ -322,14 +314,14 @@ class InfogrooveRenderer:
         height = float(canvas_dict.get("height", self._template.canvas.height))
         canvas_dict["width"] = width
         canvas_dict["height"] = height
-        global_bindings["canvas"] = canvas_dict
+        properties["canvas"] = canvas_dict
 
-        accessible_globals = self._make_accessible_bindings(global_bindings)
-        context.update(accessible_globals)
-        let_adapter = ensure_accessible(accessible_globals)
-        context["let"] = let_adapter
-        context["variables"] = let_adapter  # backwards-friendly alias
-        context["canvas"] = accessible_globals["canvas"]
+        accessible_properties = self._make_accessible_bindings(properties)
+        context.update(accessible_properties)
+        properties_adapter = ensure_accessible(accessible_properties)
+        context["properties"] = properties_adapter
+        context["variables"] = properties_adapter  # backwards-friendly alias
+        context["canvas"] = accessible_properties["canvas"]
         context["canvasWidth"] = width
         context["canvasHeight"] = height
         context["canvas_width"] = width

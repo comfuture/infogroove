@@ -32,6 +32,7 @@ class ElementSpec:
     attributes: MutableMapping[str, str] = field(default_factory=dict)
     text: str | None = None
     repeat: RepeatSpec | None = None
+    let: Mapping[str, Any] = field(default_factory=dict)
     children: list["ElementSpec"] = field(default_factory=list)
 
 
@@ -42,7 +43,7 @@ class TemplateSpec:
     source_path: Path
     canvas: CanvasSpec
     template: list[ElementSpec]
-    let_bindings: Mapping[str, Any] = field(default_factory=dict)
+    properties: Mapping[str, Any] = field(default_factory=dict)
     num_elements_range: tuple[int, int] | None = None
     schema: Mapping[str, Any] | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)

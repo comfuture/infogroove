@@ -1,7 +1,7 @@
 {
   "name": "Arc Positioned Circles",
   "description": "Places circular milestones along an arc projected from below the viewport.",
-  "let": {
+  "properties": {
     "canvas": {
       "width": 1280,
       "height": 640
@@ -12,7 +12,7 @@
     "arcOffset": 60,
     "bubbleRadius": 48,
     "radiusLabelOffset": 72,
-    "fontFamily": "'Inter, Arial, sans-serif'",
+    "fontFamily": "Inter, Arial, sans-serif",
     "labelColor": "#0f172a",
     "valueColor": "#1e3a8a",
     "palette": [
@@ -39,20 +39,20 @@
       "type": "g",
       "repeat": {
         "items": "items",
-        "as": "entry",
-        "let": {
-          "label": "entry.label",
-          "value": "entry.value",
-          "centerX": "canvas.width / 2",
-          "centerY": "canvas.height + arcOffset",
-          "step": "arcSpan / max(__total__ - 1, 1)",
-          "angle": "startAngle + __index__ * step",
-          "angleRad": "angle * Math.pi / 180",
-          "cx": "centerX + radius * Math.cos(angleRad)",
-          "cy": "centerY - radius * Math.sin(angleRad)",
-          "fillColor": "palette[__index__ % palette.length]",
-          "labelY": "cy - radiusLabelOffset"
-        }
+        "as": "entry"
+      },
+      "let": {
+        "label": "entry.label",
+        "value": "entry.value",
+        "centerX": "canvas.width / 2",
+        "centerY": "canvas.height + arcOffset",
+        "step": "arcSpan / max(__total__ - 1, 1)",
+        "angle": "startAngle + __index__ * step",
+        "angleRad": "angle * Math.pi / 180",
+        "cx": "centerX + radius * Math.cos(angleRad)",
+        "cy": "centerY - radius * Math.sin(angleRad)",
+        "fillColor": "palette[__index__ % palette.length]",
+        "labelY": "cy - radiusLabelOffset"
       },
       "children": [
         {

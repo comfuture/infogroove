@@ -1,7 +1,7 @@
 {
   "name": "Stat Cards",
   "description": "Displays KPI cards with coloured accents.",
-  "let": {
+  "properties": {
     "canvas": {
       "width": 1024,
       "height": 600
@@ -15,7 +15,7 @@
     "titleColor": "#e2e8f0",
     "valueColor": "#f8fafc",
     "deltaColor": "#94a3b8",
-    "fontFamily": "'Inter, Arial, sans-serif'",
+    "fontFamily": "Inter, Arial, sans-serif",
     "accentColors": [
       "#38bdf8",
       "#34d399",
@@ -39,24 +39,24 @@
       "type": "g",
       "repeat": {
         "items": "items",
-        "as": "entry",
-        "let": {
-          "title": "entry.title",
-          "value": "entry.value",
-          "delta": "entry.delta",
-          "cardsPerRow": "max(1, min(__total__, 3))",
-          "row": "__index__ // cardsPerRow",
-          "column": "__index__ % cardsPerRow",
-          "cardX": "margin + column * (cardWidth + cardGap)",
-          "cardY": "margin + row * (cardHeight + cardGap)",
-          "accentColor": "accentColors[__index__ % accentColors.length]",
-          "titleX": "cardX + 20",
-          "titleY": "cardY + 36",
-          "valueX": "cardX + 20",
-          "valueY": "cardY + 82",
-          "deltaX": "cardX + 20",
-          "deltaY": "cardY + 112"
-        }
+        "as": "entry"
+      },
+      "let": {
+        "title": "entry.title",
+        "value": "entry.value",
+        "delta": "entry.delta",
+        "cardsPerRow": "max(1, min(__total__, 3))",
+        "row": "__index__ // cardsPerRow",
+        "column": "__index__ % cardsPerRow",
+        "cardX": "margin + column * (cardWidth + cardGap)",
+        "cardY": "margin + row * (cardHeight + cardGap)",
+        "accentColor": "accentColors[__index__ % accentColors.length]",
+        "titleX": "cardX + 20",
+        "titleY": "cardY + 36",
+        "valueX": "cardX + 20",
+        "valueY": "cardY + 82",
+        "deltaX": "cardX + 20",
+        "deltaY": "cardY + 112"
       },
       "children": [
         {

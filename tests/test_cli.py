@@ -42,7 +42,7 @@ def test_main_renders_svg_end_to_end(tmp_path):
     template_path.write_text(
         json.dumps(
             {
-                "let": {"canvas": {"width": 100, "height": 100}},
+                "properties": {"canvas": {"width": 100, "height": 100}},
                 "template": [
                     {
                         "type": "text",
@@ -79,7 +79,7 @@ def test_render_svg_helper(tmp_path, payload):
     template_path.write_text(
         json.dumps(
             {
-                "let": {"canvas": {"width": 100, "height": 100}},
+                "properties": {"canvas": {"width": 100, "height": 100}},
                 "template": [
                     {
                         "type": "rect",
