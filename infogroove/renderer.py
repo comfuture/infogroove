@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Iterator
 
 from jsonschema import ValidationError as JSONSchemaValidationError
 from jsonschema import SchemaError
@@ -29,8 +30,8 @@ from svg import (
 
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
 from .formula import FormulaEngine
-from .models import ElementSpec, TemplateSpec
-from .utils import fill_placeholders, to_snake_case
+from .models import ElementSpec, RepeatSpec, TemplateSpec
+from .utils import ensure_accessible, fill_placeholders, resolve_path, to_snake_case
 
 SUPPORTED_ELEMENTS = {
     "rect": Rect,
@@ -51,12 +52,97 @@ SUPPORTED_ELEMENTS = {
 }
 
 
+class _OverlayMapping(Mapping[str, Any]):
+    """Mapping overlay that lazily resolves dependent let bindings."""
+
+    def __init__(
+        self,
+        base: Mapping[str, Any],
+        resolved: dict[str, Any],
+        bindings: Mapping[str, Any],
+        resolver: Any,
+    ) -> None:
+        self._base = base
+        self._resolved = resolved
+        self._bindings = bindings
+        self._resolver = resolver
+
+    def __getitem__(self, key: str) -> Any:
+        if key in self._resolved:
+            return self._resolved[key]
+        if key in self._base:
+            return self._base[key]
+        if key in self._bindings:
+            return self._resolver(key)
+        raise KeyError(key)
+
+    def __iter__(self) -> Iterator[str]:  # type: ignore[override]
+        seen: set[str] = set()
+        for mapping in (self._base, self._resolved):
+            for key in mapping:
+                if key not in seen:
+                    seen.add(key)
+                    yield key
+        for key in self._bindings:
+            if key not in seen:
+                yield key
+
+    def __len__(self) -> int:
+        keys = set(self._base) | set(self._resolved) | set(self._bindings)
+        return len(keys)
+
+
+class _FormulaScope(Mapping[str, Any]):
+    """Mapping view passed into the formula engine during binding evaluation."""
+
+    def __init__(
+        self,
+        overlay: _OverlayMapping,
+        base: Mapping[str, Any],
+        resolved: Mapping[str, Any],
+        bindings: Mapping[str, Any],
+        skip: str,
+    ) -> None:
+        self._overlay = overlay
+        self._base = base
+        self._resolved = resolved
+        self._bindings = bindings
+        self._skip = skip
+
+    def __getitem__(self, key: str) -> Any:
+        if key == self._skip:
+            raise KeyError(key)
+        return self._overlay[key]
+
+    def __iter__(self) -> Iterator[str]:  # type: ignore[override]
+        seen: set[str] = set()
+        for mapping in (self._resolved, self._base):
+            for key in mapping:
+                if key == self._skip or key in seen:
+                    continue
+                seen.add(key)
+                yield key
+
+    def __len__(self) -> int:
+        keys = set(self._base) | set(self._resolved)
+        keys.discard(self._skip)
+        return len(keys)
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):  # pragma: no cover - defensive
+            return False
+        if key == self._skip:
+            return False
+        if key in self._resolved or key in self._base:
+            return True
+        return key in self._bindings
+
+
 class InfogrooveRenderer:
     """Render SVG documents by combining templates with external data."""
 
     def __init__(self, template: TemplateSpec):
         self._template = template
-        self._engine = FormulaEngine(template.formulas)
 
     @property
     def template(self) -> TemplateSpec:
@@ -70,51 +156,101 @@ class InfogrooveRenderer:
         dataset = self._validate_data(data)
         base_context = self._build_base_context(dataset)
         svg_root = SVG(
-            width=self._template.canvas.width,
-            height=self._template.canvas.height,
+            width=base_context.get("canvasWidth", self._template.canvas.width),
+            height=base_context.get("canvasHeight", self._template.canvas.height),
             elements=[],
         )
-        self._render_canvas_elements(svg_root, base_context)
-        self._render_item_elements(svg_root, base_context, dataset)
+
+        nodes: list[Any] = []
+        for element in self._template.template:
+            nodes.extend(self._render_to_nodes(element, base_context))
+
+        svg_root.elements = (svg_root.elements or []) + nodes
         return svg_root.as_str()
 
-    def _render_canvas_elements(self, svg_root: SVG, base_context: Mapping[str, Any]) -> None:
-        """Render non-repeating elements that only depend on the global context."""
-        for element in self._elements_for_scope("canvas"):
-            context = dict(base_context)
-            try:
-                evaluated = self._engine.evaluate(context)
-            except FormulaEvaluationError:
-                evaluated = {}
-            context.update(evaluated)
-            self._append(svg_root, element, context)
-
-    def _render_item_elements(
+    def _render_to_nodes(
         self,
-        svg_root: SVG,
-        base_context: Mapping[str, Any],
-        dataset: Sequence[Mapping[str, Any]],
-    ) -> None:
-        """Render templated elements once for every record in the dataset."""
-        total = len(dataset)
-        for index, item in enumerate(dataset):
-            context = self._build_item_context(base_context, item, index, total)
-            evaluated = self._engine.evaluate(context)
-            context.update(evaluated)
-            for element in self._elements_for_scope("item"):
-                item_context = dict(context)
-                self._append(svg_root, element, item_context)
+        element: ElementSpec,
+        context: Mapping[str, Any],
+        *,
+        ignore_repeat: bool = False,
+    ) -> list[Any]:
+        if element.repeat and not ignore_repeat:
+            items, total = self._resolve_repeat_items(element.repeat, context)
+            rendered: list[Any] = []
+            for index, item in enumerate(items):
+                frame = self._build_repeat_context(context, element.repeat, item, index, total)
+                rendered.extend(self._render_to_nodes(element, frame, ignore_repeat=True))
+            return rendered
 
-    def _append(self, svg_root: SVG, element: ElementSpec, context: Mapping[str, Any]) -> None:
-        """Instantiate an SVG element from the template definition and attach it."""
         node = self._create_node(element, context)
-        if svg_root.elements is None:
-            svg_root.elements = []
-        svg_root.elements.append(node)
+
+        if element.children:
+            if not hasattr(node, "elements"):
+                raise RenderError(f"Element type '{element.type}' does not support nested children")
+            child_nodes: list[Any] = []
+            for child in element.children:
+                child_nodes.extend(self._render_to_nodes(child, context))
+            existing = list(getattr(node, "elements", []) or [])
+            node.elements = existing + child_nodes
+
+        return [node]
+
+    def _resolve_repeat_items(
+        self,
+        repeat: RepeatSpec,
+        context: Mapping[str, Any],
+    ) -> tuple[list[Any], int]:
+        try:
+            collection = resolve_path(context, repeat.items)
+        except KeyError as exc:
+            raise RenderError(f"Unable to resolve repeat items at '{repeat.items}'") from exc
+
+        if isinstance(collection, Sequence):
+            items = list(collection)
+        else:
+            try:
+                items = list(collection)
+            except TypeError as exc:  # pragma: no cover - defensive
+                raise RenderError(f"Repeat items at '{repeat.items}' are not iterable") from exc
+
+        return items, len(items)
+
+    def _build_repeat_context(
+        self,
+        parent_context: Mapping[str, Any],
+        repeat: RepeatSpec,
+        item: Any,
+        index: int,
+        total: int,
+    ) -> dict[str, Any]:
+        frame = dict(parent_context)
+        frame[repeat.alias] = ensure_accessible(item)
+        if repeat.index:
+            frame[repeat.index] = index
+        frame["__index__"] = index
+        frame["__first__"] = index == 0
+        frame["__last__"] = index == total - 1
+        frame["__total__"] = total
+        frame["__count__"] = index + 1
+
+        if repeat.let:
+            bindings = self._evaluate_bindings(repeat.let, frame, label=f"repeat:{repeat.alias}")
+            accessible_bindings = self._make_accessible_bindings(bindings)
+            frame.update(accessible_bindings)
+
+            parent_let = frame.get("let")
+            combined_let: dict[str, Any] = {}
+            if isinstance(parent_let, Mapping):
+                combined_let.update({key: parent_let[key] for key in parent_let})
+            combined_let.update(accessible_bindings)
+            let_adapter = ensure_accessible(combined_let)
+            frame["let"] = let_adapter
+            frame["variables"] = let_adapter
+
+        return frame
 
     def _create_node(self, element: ElementSpec, context: Mapping[str, Any]) -> Any:
-        """Instantiate an SVG node (and any nested children) from a template element."""
-
         factory = SUPPORTED_ELEMENTS.get(element.type.lower())
         if factory is None:
             raise RenderError(f"Unsupported element type '{element.type}'")
@@ -130,32 +266,17 @@ class InfogrooveRenderer:
         else:
             node = factory(**prepared_attributes)
 
-        if element.children:
-            if not hasattr(node, "elements"):
-                raise RenderError(f"Element type '{element.type}' does not support nested children")
-            child_nodes = [self._create_node(child, context) for child in element.children]
-            existing = list(getattr(node, "elements", []) or [])
-            node.elements = existing + child_nodes
-
         return node
 
-    def _elements_for_scope(self, scope: str) -> Iterable[ElementSpec]:
-        """Return the subset of elements matching the provided scope value."""
-        return [element for element in self._template.elements if element.scope == scope]
-
     def _build_base_context(self, dataset: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-        """Create the global context shared by all elements and formulas."""
-        variables = dict(self._template.variables)
-        canvas_map = dict(variables.get("canvas", {})) if isinstance(variables.get("canvas"), Mapping) else {}
-        width = float(canvas_map.get("width", self._template.canvas.width))
-        height = float(canvas_map.get("height", self._template.canvas.height))
-        canvas_map.update({"width": width, "height": height})
-        variables["canvas"] = canvas_map
+        length = len(dataset)
+        accessible_data = ensure_accessible(dataset)
         values = [
             item.get("value")
             for item in dataset
             if isinstance(item, Mapping) and isinstance(item.get("value"), (int, float))
         ]
+
         metrics: dict[str, Any] = {}
         if values:
             metrics.update(
@@ -167,57 +288,146 @@ class InfogrooveRenderer:
                     "averageValue": sum(values) / len(values),
                 }
             )
-        return {
-            "data": dataset,
-            "items": dataset,
-            "total": len(dataset),
-            "count": len(dataset),
-            "canvas": canvas_map,
-            "canvasWidth": width,
-            "canvasHeight": height,
-            "canvas_width": width,
-            "canvas_height": height,
+
+        context: dict[str, Any] = {
+            "data": accessible_data,
+            "items": accessible_data,
+            "total": length,
+            "count": length,
             **metrics,
-            **{key: value for key, value in variables.items() if key != "canvas"},
-            "variables": variables,
         }
 
-    def _build_item_context(
-        self,
-        base_context: Mapping[str, Any],
-        item: Mapping[str, Any],
-        index: int,
-        total: int,
-    ) -> dict[str, Any]:
-        """Blend the base context with per-item details for formula evaluation."""
-        context = dict(base_context)
-        context.update({
-            "index": index,
-            "idx": index,
-            "oneBasedIndex": index + 1,
-            "position": index + 1,
-            "item": item,
-            "record": item,
-            "total": total,
-            "count": total,
-        })
-        context.update(item)
-        if (
-            "value" not in context
-            and item
-            and all(isinstance(v, (int, float)) for v in item.values())
-        ):
-            context["value"] = next(iter(item.values()))
-        context.setdefault("label", item.get("text") or item.get("label"))
+        global_bindings = self._evaluate_bindings(self._template.let_bindings, context, label="let")
+
+        canvas_binding = global_bindings.get("canvas")
+        if isinstance(canvas_binding, Mapping):
+            canvas_dict = {key: canvas_binding[key] for key in canvas_binding}
+        else:
+            canvas_dict = {
+                "width": self._template.canvas.width,
+                "height": self._template.canvas.height,
+            }
+
+        width = float(canvas_dict.get("width", self._template.canvas.width))
+        height = float(canvas_dict.get("height", self._template.canvas.height))
+        canvas_dict["width"] = width
+        canvas_dict["height"] = height
+        global_bindings["canvas"] = canvas_dict
+
+        accessible_globals = self._make_accessible_bindings(global_bindings)
+        context.update(accessible_globals)
+        let_adapter = ensure_accessible(accessible_globals)
+        context["let"] = let_adapter
+        context["variables"] = let_adapter  # backwards-friendly alias
+        context["canvas"] = accessible_globals["canvas"]
+        context["canvasWidth"] = width
+        context["canvasHeight"] = height
+        context["canvas_width"] = width
+        context["canvas_height"] = height
+
         return context
 
+    def _evaluate_bindings(
+        self,
+        bindings: Mapping[str, Any],
+        base_context: Mapping[str, Any],
+        *,
+        label: str,
+    ) -> dict[str, Any]:
+        resolved: dict[str, Any] = {}
+        resolving: set[str] = set()
+
+        def resolve_key(name: str) -> Any:
+            if name in resolved:
+                return resolved[name]
+            if name in resolving:
+                raise RenderError(f"Circular let binding detected for '{label}.{name}'")
+            if name not in bindings:
+                raise KeyError(name)
+
+            resolving.add(name)
+            overlay = _OverlayMapping(base_context, resolved, bindings, resolve_key)
+            try:
+                value = self._evaluate_value(
+                    name,
+                    bindings[name],
+                    overlay,
+                    base_context,
+                    resolved,
+                    bindings,
+                )
+            finally:
+                resolving.remove(name)
+            resolved[name] = value
+            return value
+
+        for key in bindings:
+            resolve_key(key)
+
+        return resolved
+
+    def _evaluate_value(
+        self,
+        name: str,
+        value: Any,
+        overlay: _OverlayMapping,
+        base_context: Mapping[str, Any],
+        resolved: Mapping[str, Any],
+        bindings: Mapping[str, Any],
+    ) -> Any:
+        if isinstance(value, Mapping):
+            return {
+                key: self._evaluate_value(
+                    f"{name}.{key}",
+                    sub_value,
+                    overlay,
+                    base_context,
+                    resolved,
+                    bindings,
+                )
+                for key, sub_value in value.items()
+            }
+
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [
+                self._evaluate_value(
+                    f"{name}[{index}]",
+                    item,
+                    overlay,
+                    base_context,
+                    resolved,
+                    bindings,
+                )
+                for index, item in enumerate(value)
+            ]
+
+        if isinstance(value, str):
+            try:
+                resolved_value = resolve_path(overlay, value)
+                return resolved_value
+            except KeyError:
+                pass
+            engine = FormulaEngine({name: value})
+            scope = _FormulaScope(overlay, base_context, resolved, bindings, name)
+            try:
+                evaluated = engine.evaluate(scope)[name]
+            except FormulaEvaluationError:
+                return value
+            return evaluated
+
+        return value
+
+    @staticmethod
+    def _make_accessible_bindings(bindings: Mapping[str, Any]) -> dict[str, Any]:
+        return {key: ensure_accessible(value) for key, value in bindings.items()}
+
     def _validate_data(self, data: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-        """Ensure the incoming data sequence can safely drive the template."""
         if not isinstance(data, Sequence):
             raise DataValidationError("Input data must be an ordered sequence of mappings")
         dataset = list(data)
         if not all(isinstance(item, Mapping) for item in dataset):
             raise DataValidationError("Each data item must be a mapping")
+
         minimum, maximum = self._template.expected_range()
         count = len(dataset)
         if minimum is not None and count < minimum:
@@ -239,7 +449,6 @@ class InfogrooveRenderer:
 
     @staticmethod
     def _normalise_attribute_key(key: str) -> str:
-        """Translate template attribute keys to svg.py-friendly parameter names."""
         key = key.replace("-", "_")
         if key == "class":
             return "class_"

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import IO, Any, Mapping
 
 from .exceptions import TemplateError
-from .models import CanvasSpec, ElementSpec, TemplateSpec
+from .models import CanvasSpec, ElementSpec, RepeatSpec, TemplateSpec
 from .renderer import InfogrooveRenderer
 
 
@@ -57,40 +57,42 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     """Convert JSON data into a strongly typed :class:`TemplateSpec`."""
 
     if "styles" in payload:
-        raise TemplateError("'styles' is no longer supported; move values under 'variables'")
-    if any(key in payload for key in ("screen", "screenWidth", "screenHeight")):
-        raise TemplateError("Canvas dimensions must be defined under 'variables.canvas'")
+        raise TemplateError("'styles' is no longer supported; move values under 'let'")
+    if "variables" in payload:
+        raise TemplateError("'variables' is no longer supported; move values under 'let'")
+    if "elements" in payload:
+        raise TemplateError("'elements' has been renamed to 'template'")
+    if "formulas" in payload:
+        raise TemplateError("'formulas' is no longer supported; use 'repeat.let'")
 
-    variables_block = payload.get("variables")
-    if not isinstance(variables_block, Mapping):
-        raise TemplateError("'variables' must be a mapping containing 'canvas'")
-    variables = dict(variables_block)
+    let_block = payload.get("let")
+    if not isinstance(let_block, Mapping):
+        raise TemplateError("'let' must be a mapping containing template bindings")
+    let_bindings = dict(let_block)
 
-    canvas_block = variables.get("canvas")
+    canvas_block = let_bindings.get("canvas")
     if not isinstance(canvas_block, Mapping):
-        raise TemplateError("'variables.canvas' must be a mapping with width and height")
+        raise TemplateError("'let.canvas' must be a mapping with width and height")
     width = canvas_block.get("width")
     height = canvas_block.get("height")
     if width is None or height is None:
         raise TemplateError("Both canvas width and height must be provided")
-    canvas = CanvasSpec(width=float(width), height=float(height))
+    try:
+        canvas_width = float(width)
+        canvas_height = float(height)
+    except (TypeError, ValueError) as exc:  # pragma: no cover - defensive mapping
+        raise TemplateError("Canvas width and height must be numeric") from exc
+
+    canvas = CanvasSpec(width=canvas_width, height=canvas_height)
     canvas_map = dict(canvas_block)
     canvas_map["width"] = canvas.width
     canvas_map["height"] = canvas.height
-    variables["canvas"] = canvas_map
+    let_bindings["canvas"] = canvas_map
 
-    elements_raw = payload.get("elements", [])
-    if not isinstance(elements_raw, list):
-        raise TemplateError("'elements' must be provided as a list")
-    elements = [_parse_element(entry) for entry in elements_raw]
-
-    formulas_block = payload.get("formulas")
-    if formulas_block is None:
-        formulas: Mapping[str, Any] = {}
-    elif isinstance(formulas_block, Mapping):
-        formulas = formulas_block
-    else:
-        raise TemplateError("'formulas' must be a mapping of name to expression")
+    template_block = payload.get("template", [])
+    if not isinstance(template_block, list):
+        raise TemplateError("'template' must be provided as a list of element mappings")
+    template = [_parse_element(entry) for entry in template_block]
 
     range_block = payload.get("numElementsRange")
     range_tuple: tuple[int, int] | None = None
@@ -108,9 +110,8 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
     return TemplateSpec(
         source_path=path,
         canvas=canvas,
-        elements=elements,
-        formulas=dict(formulas),
-        variables=dict(variables),
+        template=template,
+        let_bindings=dict(let_bindings),
         num_elements_range=range_tuple,
         schema=schema_block,  # type: ignore[arg-type]
         metadata=metadata,
@@ -131,10 +132,31 @@ def _parse_element(entry: Any) -> ElementSpec:
     text = entry.get("text")
     if text is not None and not isinstance(text, str):
         raise TemplateError("Element text must be a string when provided")
-    scope = entry.get("scope", "item")
-    if scope not in {"item", "canvas"}:
-        raise TemplateError("Element scope must be either 'item' or 'canvas'")
     attributes = {key: str(value) for key, value in attributes_block.items()}
+
+    if "scope" in entry:
+        raise TemplateError("'scope' is no longer supported; use 'repeat' to control iteration")
+
+    repeat_block = entry.get("repeat")
+    repeat: RepeatSpec | None = None
+    if repeat_block is not None:
+        if not isinstance(repeat_block, Mapping):
+            raise TemplateError("Element 'repeat' declarations must be provided as a mapping")
+        items = repeat_block.get("items")
+        alias = repeat_block.get("as")
+        if not isinstance(items, str) or not items:
+            raise TemplateError("Repeat bindings require a string 'items' path")
+        if not isinstance(alias, str) or not alias:
+            raise TemplateError("Repeat bindings require a string 'as' alias")
+        index_name = repeat_block.get("index")
+        if index_name is not None and not isinstance(index_name, str):
+            raise TemplateError("Repeat 'index' must be a string when provided")
+        let_block = repeat_block.get("let", {})
+        if let_block is None:
+            let_block = {}
+        if not isinstance(let_block, Mapping):
+            raise TemplateError("Repeat 'let' bindings must be declared as a mapping when provided")
+        repeat = RepeatSpec(items=items, alias=alias, index=index_name, let=dict(let_block))
 
     children_block = entry.get("children", [])
     if children_block is None:
@@ -144,4 +166,4 @@ def _parse_element(entry: Any) -> ElementSpec:
     else:
         raise TemplateError("Element children must be declared as a list when provided")
 
-    return ElementSpec(type=element_type, attributes=attributes, text=text, scope=scope, children=children)
+    return ElementSpec(type=element_type, attributes=attributes, text=text, repeat=repeat, children=children)
