@@ -72,8 +72,12 @@ aims to keep templates declarative and predictable:
 - `template`: A list of element descriptors. Each descriptor has a `type`,
   optional attribute map, optional `text`, optional `let`, and optional
   `children`. Elements render once unless a `repeat` block is present.
-- `numElementsRange` (optional): Expected minimum and maximum number of input
-  records for validation.
+- `schema` (optional): JSON Schema definition for the expected dataset shape.
+  Describe the root collection (usually an `array`) as well as nested iterables
+  like `values`, `points`, or other custom series so input data can be validated
+  before rendering. Templates typically expect the top-level payload to be an
+  object (for example `{"items": [...]}`), but you are free to choose any shape
+  that satisfies the schema.
 
 Each element may declare its own `let` block. These bindings evaluate against
 the current context (including repeat helpers) and the results become available
