@@ -67,7 +67,9 @@ aims to keep templates declarative and predictable:
   `canvas` size here (`width`, `height`) along with reusable constants such as
   `palette`, `margin`, or `fontFamily`. Bindings can be literals or
   expressions; results become available directly as `{margin}` (and are also
-  exposed under `let.margin` for compatibility).
+  exposed under `let.margin` for compatibility). When you want to keep a plain
+  string literal, wrap it in quotes so it evaluates as a Python string (for
+  example, `"fontFamily": "'Inter, Arial, sans-serif'"`).
 - `template`: A list of element descriptors. Each descriptor has a `type`,
   optional attribute map, optional `text`, and optional `children`. Elements
   render once unless a `repeat` block is present.
@@ -172,6 +174,9 @@ svg_inline = infographic.render([{}] * 10)
   its `let` bindings so they stay scoped to that block.
 - Inline expressions handle quick maths (`{__index__ * 10}`) while `repeat.let`
   bindings are ideal for shared or multi-step calculations.
+- Wrap literal strings in quotes inside `let` blocks so they evaluate as Python
+  string expressions. This keeps values like font stacks (`"'Inter', 'Pretendard', Arial, sans-serif"`) or
+  CSS keywords from being parsed as variable references.
 - Let bindings resolve lazily, so the order you declare keys does not matter.
   However, circular definitions (e.g. `total: "max"`, `max: "total"`) will be
   rejected with a clear error. Break cycles by lifting shared calculations into
