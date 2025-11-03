@@ -84,6 +84,29 @@ with a sequence of mappings to produce SVG markup. The convenience helper
 `infogroove.render_svg(path, data)` performs the load/validate/render cycle in
 one step for filesystem templates.
 
+When downstream tooling wants to work with the pre-SVG node graph, call
+`InfogrooveRenderer.translate(data)` to obtain a list of node specifications:
+
+```python
+renderer = load_path("examples/arc-circles/def.json")
+nodes = renderer.translate(payload)
+# → [{"type": "rect", "attributes": {...}, "children": []}, ...]
+```
+
+Each node is a JSON-serialisable dictionary containing `type`, `attributes`,
+optional `text`, and `children`. This makes it straightforward to plug in a
+custom SVG serializer or build an accessibility audit pipeline without
+touching the SVG runtime.
+
+Renderers are now pluggable. Use `InfogrooveRenderer.register_renderer(type,
+callable)` (or pass a `renderers={...}` mapping to `Infogroove(...)`/`load*`)
+to override how specific element types expand. Renderer callables receive a
+resolved element payload—placeholders and `let` bindings have already been
+applied—and return one or more node specs. This is the recommended place to
+map higher-level template primitives such as `icon` into concrete SVG
+structures, perform sanitisation of external assets, or integrate an icon
+registry.
+
 ## Data Validation
 
 Before rendering begins the renderer:
@@ -137,9 +160,11 @@ materialisation raise domain-specific exceptions (`TemplateError`,
 
 ## CLI
 
-The `infogroove` CLI accepts `-f/--template`, `-i/--input`, and `-o/--output.
-` Passing `-` as the output path streams SVG to stdout, which is useful for
-tooling pipelines.
+The `infogroove` CLI accepts `-f/--template`, `-i/--input`, and `-o/--output`.
+Passing `-` as the output path streams SVG to stdout, which is useful for
+tooling pipelines. Add `--raw` to emit the translated node specification as
+JSON instead of rendering SVG—handy for offline inspection, snapshot testing,
+or delegating the final rendering step to another system.
 
 ## Summary
 

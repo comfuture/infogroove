@@ -21,8 +21,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         renderer = load_path(args.template)
         data = _load_data(args.input)
-        svg_markup = renderer.render(data)
-        _write_output(svg_markup, args.output)
+        if args.raw:
+            nodes = renderer.translate(data)
+            payload = json.dumps(nodes, ensure_ascii=False, indent=2)
+            _write_output(payload + "\n", args.output)
+        else:
+            svg_markup = renderer.render(data)
+            _write_output(svg_markup, args.output)
     except (TemplateError, DataValidationError, FormulaEvaluationError, RenderError) as exc:
         parser.exit(status=1, message=f"error: {exc}\n")
     return 0
@@ -44,6 +49,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output",
         required=True,
         help="Destination SVG file path or '-' for stdout",
+    )
+    parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="Write the translated node specification as JSON instead of SVG markup",
     )
     return parser
 

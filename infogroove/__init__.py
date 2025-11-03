@@ -7,11 +7,12 @@ from typing import Mapping, Sequence
 
 from .core import Infogroove
 from .loader import load, load_path, loads
-from .renderer import InfogrooveRenderer
+from .renderer import ElementRenderer, InfogrooveRenderer
 
 __all__ = [
     "Infogroove",
     "InfogrooveRenderer",
+    "ElementRenderer",
     "load",
     "loads",
     "get_version",

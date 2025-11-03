@@ -82,6 +82,12 @@ def _unwrap_accessible(value: Any) -> Any:
     return value
 
 
+def stringify(value: Any) -> str:
+    """Convert scalars into user-friendly strings for placeholder expansion."""
+
+    return str(value)
+
+
 def derive_schema_item_bounds(schema: Mapping[str, Any]) -> tuple[int | None, int | None]:
     """Return ``(minItems, maxItems)`` for a JSON Schema array definition when available."""
 
@@ -329,7 +335,7 @@ def fill_placeholders(template: str, context: Mapping[str, Any]) -> str:
             value = resolve_path(context, token)
         except KeyError:
             value = _evaluate_inline_expression(token, context)
-        return "" if value is None else str(value)
+        return "" if value is None else stringify(value)
 
     return PLACEHOLDER_PATTERN.sub(_replacement, template)
 

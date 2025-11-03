@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Iterator
+from dataclasses import dataclass
+from inspect import signature
+from typing import Any, Callable, Iterator
 
 from jsonschema import ValidationError as JSONSchemaValidationError
 from jsonschema import SchemaError
@@ -31,7 +33,24 @@ from svg import (
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
 from .formula import FormulaEngine
 from .models import ElementSpec, RepeatSpec, TemplateSpec
-from .utils import MappingAdapter, ensure_accessible, fill_placeholders, resolve_path, to_snake_case
+from .utils import MappingAdapter, ensure_accessible, fill_placeholders, resolve_path, stringify, to_snake_case
+
+NodeSpec = dict[str, Any]
+
+
+@dataclass(slots=True, frozen=True)
+class RendererInput:
+    """Resolved element data provided to renderer callables."""
+
+    type: str
+    attributes: Mapping[str, str]
+    text: str | None
+    children: tuple[NodeSpec, ...]
+    spec: ElementSpec
+
+
+ElementRenderer = Callable[[RendererInput, Mapping[str, Any]], list[NodeSpec]]
+
 
 SUPPORTED_ELEMENTS = {
     "rect": Rect,
@@ -49,6 +68,23 @@ SUPPORTED_ELEMENTS = {
     "radialgradient": RadialGradient,
     "stop": Stop,
     "tspan": TSpan,
+}
+
+
+def _builtin_node_renderer(payload: RendererInput, _: Mapping[str, Any]) -> list[NodeSpec]:
+    node: NodeSpec = {
+        "type": payload.type,
+        "attributes": dict(payload.attributes),
+        "children": [child for child in payload.children],
+    }
+    if payload.text is not None:
+        node["text"] = stringify(payload.text)
+    return [node]
+
+
+_ELEMENT_PARAMETERS: dict[str, set[str]] = {
+    key: {name for name in signature(factory.__init__).parameters if name != "self"}
+    for key, factory in SUPPORTED_ELEMENTS.items()
 }
 
 
@@ -141,8 +177,17 @@ class _FormulaScope(Mapping[str, Any]):
 class InfogrooveRenderer:
     """Render SVG documents by combining templates with external data."""
 
-    def __init__(self, template: TemplateSpec):
+    def __init__(
+        self,
+        template: TemplateSpec,
+        renderers: Mapping[str, ElementRenderer] | None = None,
+    ) -> None:
         self._template = template
+        self._renderers: dict[str, ElementRenderer] = {
+            key: _builtin_node_renderer for key in SUPPORTED_ELEMENTS
+        }
+        if renderers:
+            self.register_renderers(renderers)
 
     @property
     def template(self) -> TemplateSpec:
@@ -150,14 +195,51 @@ class InfogrooveRenderer:
 
         return self._template
 
+    def translate(self, data: Any) -> list[NodeSpec]:
+        """Return the resolved node specifications without creating SVG markup."""
+
+        payload = self._validate_data(data)
+        base_context = self._build_base_context(payload)
+        return self._translate_from_context(base_context)
+
     def render(self, data: Any) -> str:
         """Render the template with the supplied data and return SVG markup."""
 
         payload = self._validate_data(data)
         base_context = self._build_base_context(payload)
-        canvas_context = base_context.get("canvas")
+        width, height = self._resolve_canvas_dimensions(base_context)
+        node_specs = self._translate_from_context(base_context)
+
+        svg_root = SVG(width=width, height=height, elements=[])
+        svg_nodes = [self._spec_to_svg(spec) for spec in node_specs]
+        svg_root.elements = (svg_root.elements or []) + svg_nodes
+        return svg_root.as_str()
+
+    def register_renderer(self, element_type: str, renderer: ElementRenderer) -> None:
+        """Register or override the renderer used for a specific element type."""
+
+        if not isinstance(element_type, str) or not element_type:
+            raise ValueError("Element type must be provided as a non-empty string")
+        if not callable(renderer):
+            raise TypeError("Renderer must be callable")
+        self._renderers[element_type.lower()] = renderer
+
+    def register_renderers(self, renderers: Mapping[str, ElementRenderer]) -> None:
+        """Register multiple renderers in a single call."""
+
+        for key, handler in renderers.items():
+            self.register_renderer(key, handler)
+
+    def _translate_from_context(self, base_context: Mapping[str, Any]) -> list[NodeSpec]:
+        nodes: list[NodeSpec] = []
+        for element in self._template.template:
+            nodes.extend(self._render_to_nodes(element, base_context))
+        return nodes
+
+    def _resolve_canvas_dimensions(self, context: Mapping[str, Any]) -> tuple[float, float]:
         width = self._template.canvas.width
         height = self._template.canvas.height
+        canvas_context = context.get("canvas")
         if isinstance(canvas_context, Mapping):
             try:
                 width = float(canvas_context["width"])
@@ -165,15 +247,7 @@ class InfogrooveRenderer:
             except (KeyError, TypeError, ValueError):
                 width = self._template.canvas.width
                 height = self._template.canvas.height
-
-        svg_root = SVG(width=width, height=height, elements=[])
-
-        nodes: list[Any] = []
-        for element in self._template.template:
-            nodes.extend(self._render_to_nodes(element, base_context))
-
-        svg_root.elements = (svg_root.elements or []) + nodes
-        return svg_root.as_str()
+        return width, height
 
     def _render_to_nodes(
         self,
@@ -181,10 +255,10 @@ class InfogrooveRenderer:
         context: Mapping[str, Any],
         *,
         ignore_repeat: bool = False,
-    ) -> list[Any]:
+    ) -> list[NodeSpec]:
         if element.repeat and not ignore_repeat:
             items, total = self._resolve_repeat_items(element.repeat, context)
-            rendered: list[Any] = []
+            rendered: list[NodeSpec] = []
             for index, item in enumerate(items):
                 frame = self._build_repeat_context(context, element.repeat, item, index, total)
                 rendered.extend(self._render_to_nodes(element, frame, ignore_repeat=True))
@@ -195,19 +269,239 @@ class InfogrooveRenderer:
             bindings = self._evaluate_bindings(element.let, working_context, label=f"element:{element.type}")
             accessible = self._make_accessible_bindings(bindings)
             working_context.update(accessible)
+        child_nodes: list[NodeSpec] = []
+        for child in element.children:
+            child_nodes.extend(self._render_to_nodes(child, working_context))
 
-        node = self._create_node(element, working_context)
+        prepared_attributes = {
+            key: fill_placeholders(value, working_context)
+            for key, value in element.attributes.items()
+        }
+        text_value = fill_placeholders(element.text, working_context) if element.text is not None else None
 
-        if element.children:
+        renderer = self._renderers.get(element.type.lower())
+        if renderer is None:
+            raise RenderError(f"Unsupported element type '{element.type}'")
+
+        payload = RendererInput(
+            type=element.type,
+            attributes=prepared_attributes,
+            text=text_value,
+            children=tuple(child_nodes),
+            spec=element,
+        )
+
+        try:
+            outputs = renderer(payload, working_context)
+        except RenderError:
+            raise
+        except Exception as exc:  # pragma: no cover - depends on custom renderer
+            raise RenderError(f"Renderer for '{element.type}' failed: {exc}") from exc
+
+        return self._normalise_renderer_outputs(outputs, element.type)
+
+    def _normalise_renderer_outputs(self, outputs: Any, element_type: str) -> list[NodeSpec]:
+        if outputs is None:
+            return []
+        if not isinstance(outputs, Sequence) or isinstance(outputs, (str, bytes)):
+            raise RenderError(
+                f"Renderer for '{element_type}' must return a sequence of node specifications"
+            )
+        resolved: list[NodeSpec] = []
+        for index, candidate in enumerate(outputs):
+            node = self._coerce_node_spec(candidate, f"{element_type}[{index}]")
+            resolved.append(node)
+        return resolved
+
+    def _coerce_node_spec(self, candidate: Any, label: str) -> NodeSpec:
+        if isinstance(candidate, Mapping):
+            tag = candidate.get("type") or candidate.get("tag")
+            if not isinstance(tag, str):
+                raise RenderError(f"Renderer output '{label}' must declare a string 'type'")
+            attributes_block = candidate.get("attributes") or {}
+            if not isinstance(attributes_block, Mapping):
+                raise RenderError(f"Renderer output '{label}.attributes' must be a mapping")
+            children_block = candidate.get("children", [])
+            children = self._coerce_children(children_block, f"{label}.children")
+            node: NodeSpec = {
+                "type": tag,
+                "attributes": dict(attributes_block),
+                "children": children,
+            }
+            if "text" in candidate and candidate["text"] is not None:
+                node["text"] = str(candidate["text"])
+            return node
+
+        if isinstance(candidate, Sequence) and not isinstance(candidate, (str, bytes)):
+            if not candidate:
+                raise RenderError(f"Renderer output '{label}' must not be empty")
+            tag = str(candidate[0])
+            attrs: Mapping[str, Any] = {}
+            text_value: str | None = None
+            children_payload: Any = []
+            if len(candidate) >= 2:
+                second = candidate[1]
+                if isinstance(second, Mapping):
+                    attrs = second
+                elif isinstance(second, Sequence) and not isinstance(second, (str, bytes)):
+                    children_payload = second
+                elif second is None:
+                    children_payload = []
+                else:
+                    text_value = str(second)
+            if len(candidate) >= 3:
+                third = candidate[2]
+                if isinstance(third, Sequence) and not isinstance(third, (str, bytes)):
+                    children_payload = third
+                elif third is None:
+                    children_payload = []
+                elif text_value is None:
+                    text_value = str(third)
+                else:
+                    raise RenderError(
+                        f"Renderer output '{label}' cannot encode multiple text values"
+                    )
+            if len(candidate) >= 4:
+                fourth = candidate[3]
+                if isinstance(fourth, Sequence) and not isinstance(fourth, (str, bytes)):
+                    children_payload = fourth
+                elif fourth is None:
+                    children_payload = []
+                else:
+                    raise RenderError(
+                        f"Renderer output '{label}' children must be a sequence when provided"
+                    )
+            if len(candidate) > 4:
+                raise RenderError(
+                    f"Renderer output '{label}' contains unexpected positional values"
+                )
+            node: NodeSpec = {
+                "type": tag,
+                "attributes": dict(attrs),
+                "children": self._coerce_children(children_payload, f"{label}.children"),
+            }
+            if text_value is not None:
+                node["text"] = text_value
+            return node
+
+        raise RenderError(
+            f"Renderer output '{label}' must be a mapping or sequence describing an element"
+        )
+
+    def _coerce_children(self, payload: Any, label: str) -> list[NodeSpec]:
+        if payload in (None, []):
+            return []
+        if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes)):
+            raise RenderError(f"Renderer output '{label}' must be a sequence of child elements")
+        children: list[NodeSpec] = []
+        for index, child in enumerate(payload):
+            children.append(self._coerce_node_spec(child, f"{label}[{index}]"))
+        return children
+
+    def _spec_to_svg(self, spec: NodeSpec) -> Any:
+        element_type = spec.get("type")
+        if not isinstance(element_type, str):
+            raise RenderError("Renderer output is missing required 'type' value")
+        factory = SUPPORTED_ELEMENTS.get(element_type.lower())
+        if factory is None:
+            raise RenderError(f"Unsupported element type '{element_type}'")
+
+        raw_attributes = spec.get("attributes", {})
+        if not isinstance(raw_attributes, Mapping):
+            raise RenderError("Renderer output 'attributes' must be a mapping")
+
+        param_names = _ELEMENT_PARAMETERS.get(element_type.lower(), set())
+        prepared_attributes: dict[str, Any] = {}
+        deferred_data: dict[str, Any] = {}
+        extra_attributes: dict[str, Any] = {}
+
+        for key, value in raw_attributes.items():
+            if value is None:
+                continue
+            original_key = str(key)
+            normalised_key = self._normalise_attribute_key(original_key)
+
+            if normalised_key in {"data", "extra"} and isinstance(value, Mapping):
+                prepared_attributes[normalised_key] = {
+                    str(inner_key): self._stringify_attribute_value(inner_value)
+                    for inner_key, inner_value in value.items()
+                }
+                continue
+
+            if normalised_key in param_names:
+                prepared_attributes[normalised_key] = self._stringify_attribute_value(value)
+                continue
+
+            if original_key.startswith("data-"):
+                deferred_data[original_key.removeprefix("data-")] = self._stringify_attribute_value(value)
+                continue
+
+            extra_attributes[original_key] = self._stringify_attribute_value(value)
+
+        if deferred_data:
+            if "data" in param_names:
+                existing_data = prepared_attributes.get("data")
+                merged = dict(existing_data) if isinstance(existing_data, Mapping) else {}
+                merged.update(deferred_data)
+                prepared_attributes["data"] = merged
+            else:
+                extra_attributes.update({f"data-{key}": val for key, val in deferred_data.items()})
+
+        if extra_attributes:
+            if "extra" in param_names:
+                existing_extra = prepared_attributes.get("extra")
+                merged_extra = dict(existing_extra) if isinstance(existing_extra, Mapping) else {}
+                merged_extra.update(extra_attributes)
+                prepared_attributes["extra"] = merged_extra
+            else:
+                raise RenderError(
+                    f"Element type '{element_type}' does not support arbitrary attributes {sorted(extra_attributes)}"
+                )
+
+        if factory in (Text, TSpan):
+            text_value = self._stringify_text(spec.get("text"))
+            node = factory(text=text_value, **prepared_attributes)
+        else:
+            node = factory(**prepared_attributes)
+            text_payload = spec.get("text")
+            if text_payload not in (None, ""):
+                if hasattr(node, "elements"):
+                    text_node = Text(text=self._stringify_text(text_payload))
+                    existing = list(getattr(node, "elements", []) or [])
+                    node.elements = existing + [text_node]
+                else:
+                    raise RenderError(
+                        f"Element type '{element_type}' does not support embedded text content"
+                    )
+
+        children_payload = spec.get("children", [])
+        if children_payload:
             if not hasattr(node, "elements"):
-                raise RenderError(f"Element type '{element.type}' does not support nested children")
-            child_nodes: list[Any] = []
-            for child in element.children:
-                child_nodes.extend(self._render_to_nodes(child, working_context))
+                raise RenderError(f"Element type '{element_type}' does not support nested children")
+            child_nodes = [self._spec_to_svg(child) for child in children_payload]
             existing = list(getattr(node, "elements", []) or [])
             node.elements = existing + child_nodes
 
-        return [node]
+        return node
+
+    @staticmethod
+    def _stringify_attribute_value(value: Any) -> Any:
+        if isinstance(value, Mapping):
+            return {
+                str(key): InfogrooveRenderer._stringify_attribute_value(sub_value)
+                for key, sub_value in value.items()
+            }
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [InfogrooveRenderer._stringify_attribute_value(item) for item in value]
+        if value is None:
+            return ""
+        return stringify(value)
+
+    @staticmethod
+    def _stringify_text(value: Any) -> str:
+        if value is None:
+            return ""
+        return stringify(value)
 
     def _resolve_repeat_items(
         self,
@@ -258,24 +552,6 @@ class InfogrooveRenderer:
         frame[repeat.alias] = alias_binding
 
         return frame
-
-    def _create_node(self, element: ElementSpec, context: Mapping[str, Any]) -> Any:
-        factory = SUPPORTED_ELEMENTS.get(element.type.lower())
-        if factory is None:
-            raise RenderError(f"Unsupported element type '{element.type}'")
-
-        prepared_attributes = {
-            self._normalise_attribute_key(key): fill_placeholders(value, context)
-            for key, value in element.attributes.items()
-        }
-
-        if factory in (Text, TSpan):
-            text_value = fill_placeholders(element.text or "", context)
-            node = factory(text=text_value, **prepared_attributes)
-        else:
-            node = factory(**prepared_attributes)
-
-        return node
 
     def _build_base_context(self, payload: Any) -> dict[str, Any]:
         context: dict[str, Any] = {}
