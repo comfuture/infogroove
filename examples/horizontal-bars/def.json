@@ -39,16 +39,15 @@
       "repeat": {
         "items": "items",
         "as": "entry",
-        "index": "idx",
         "let": {
           "label": "entry.label",
           "value": "entry.value",
-          "colorIndex": "idx % colors.length",
+          "colorIndex": "__index__ % colors.length",
           "barColor": "colors[colorIndex]",
           "barX": "margin",
           "spanWidth": "canvas.width - 2 * margin",
           "barWidth": "spanWidth * (value / maxValue)",
-          "barY": "margin + idx * (barHeight + barGap)",
+          "barY": "margin + __index__ * (barHeight + barGap)",
           "labelY": "barY + (barHeight / 2)",
           "valueX": "barX + barWidth + valueGap"
         }

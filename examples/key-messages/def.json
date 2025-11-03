@@ -96,7 +96,6 @@
       "repeat": {
         "items": "items",
         "as": "entry",
-        "index": "idx",
         "let": {
           "title": "entry.title",
           "subtitle": "entry.subtitle",
@@ -106,13 +105,13 @@
           "leadX": "margin",
           "leadY": "margin",
           "leadHeight": "halfHeight - margin - sectionGap / 2",
-          "leadDisplay": "'inline' if idx == 0 else 'none'",
-          "nonLeadDisplay": "'inline' if idx > 0 else 'none'",
+          "leadDisplay": "'inline' if __index__ == 0 else 'none'",
+          "nonLeadDisplay": "'inline' if __index__ > 0 else 'none'",
           "bottomY": "halfHeight + sectionGap / 2",
           "bottomHeight": "canvasHeight - bottomY - margin",
-          "nonLeadCount": "max(total - 1, 1)",
-          "nonLeadIndex": "max(idx - 1, 0)",
-          "cardWidth": "((canvasWidth - margin * 2) - gap * (nonLeadCount - 1)) / nonLeadCount if idx > 0 else 0",
+          "nonLeadCount": "max(__total__ - 1, 1)",
+          "nonLeadIndex": "max(__index__ - 1, 0)",
+          "cardWidth": "((canvasWidth - margin * 2) - gap * (nonLeadCount - 1)) / nonLeadCount if __index__ > 0 else 0",
           "cardHeight": "bottomHeight",
           "cardX": "margin + nonLeadIndex * (cardWidth + gap)",
           "cardY": "bottomY",
@@ -122,11 +121,11 @@
           "cardTitleX": "cardX + 28",
           "cardTitleY": "cardY + 82",
           "cardSubtitleY": "cardY + 132",
-          "subtitleClipId": "f'keyMsgClip_{idx}'",
-          "subtitleClipX": "leadTitleX if idx == 0 else cardTitleX",
-          "subtitleClipY": "leadSubtitleY - 4 if idx == 0 else cardSubtitleY - 4",
-          "subtitleClipWidth": "(leadWidth - 88) if idx == 0 else max(cardWidth - 56, 0)",
-          "subtitleClipHeight": "(leadHeight - 120) if idx == 0 else max(cardHeight - 140, 0)"
+          "subtitleClipId": "f'keyMsgClip_{__index__}'",
+          "subtitleClipX": "leadTitleX if __index__ == 0 else cardTitleX",
+          "subtitleClipY": "leadSubtitleY - 4 if __index__ == 0 else cardSubtitleY - 4",
+          "subtitleClipWidth": "(leadWidth - 88) if __index__ == 0 else max(cardWidth - 56, 0)",
+          "subtitleClipHeight": "(leadHeight - 120) if __index__ == 0 else max(cardHeight - 140, 0)"
         }
       },
       "children": [

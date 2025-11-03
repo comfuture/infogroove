@@ -46,12 +46,11 @@
       "repeat": {
         "items": "items",
         "as": "entry",
-        "index": "idx",
         "let": {
           "keyword": "entry.keyword",
           "description": "entry.description",
-          "y": "marginTop + idx * rowSpacing",
-          "isEven": "idx % 2",
+          "y": "marginTop + __index__ * rowSpacing",
+          "isEven": "__index__ % 2",
           "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
           "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
           "keywordAnchor": "'start' if isEven == 0 else 'end'",

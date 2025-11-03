@@ -40,18 +40,17 @@
       "repeat": {
         "items": "items",
         "as": "entry",
-        "index": "idx",
         "let": {
           "label": "entry.label",
           "value": "entry.value",
           "centerX": "canvas.width / 2",
           "centerY": "canvas.height + arcOffset",
-          "step": "arcSpan / max(total - 1, 1)",
-          "angle": "startAngle + idx * step",
+          "step": "arcSpan / max(__total__ - 1, 1)",
+          "angle": "startAngle + __index__ * step",
           "angleRad": "angle * Math.pi / 180",
           "cx": "centerX + radius * Math.cos(angleRad)",
           "cy": "centerY - radius * Math.sin(angleRad)",
-          "fillColor": "palette[idx % palette.length]",
+          "fillColor": "palette[__index__ % palette.length]",
           "labelY": "cy - radiusLabelOffset"
         }
       },
