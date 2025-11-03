@@ -23,15 +23,15 @@ def sample_template(tmp_path):
                 repeat=RepeatSpec(
                     items="data",
                     alias="item",
-                    let={
-                        "label": "item.label",
-                        "double": "item.value * 2",
-                        "gap": "gap",
-                    },
                 ),
+                let={
+                    "label": "item.label",
+                    "double": "item.value * 2",
+                    "gap": "gap",
+                },
             ),
         ],
-        let_bindings={
+        properties={
             "canvas": {"width": 200, "height": 100},
             "gap": 24,
         },
@@ -63,7 +63,7 @@ def test_build_base_context_computes_metrics(sample_template):
 
     assert context["canvasWidth"] == 200
     assert context["canvas"]["height"] == 100
-    assert context["let"].gap == 24
+    assert context["properties"].gap == 24
     assert context["values"] == [5, 15]
     assert context["maxValue"] == 15
     assert context["averageValue"] == 10
@@ -85,6 +85,10 @@ def test_repeat_context_injects_reserved_variables(sample_template):
         total=1,
     )
 
+    element = sample_template.template[1]
+    bindings = renderer._evaluate_bindings(element.let, frame, label="element:text")
+    frame.update(renderer._make_accessible_bindings(bindings))
+
     assert frame["__index__"] == 0
     assert frame["__first__"] is True
     assert frame["__last__"] is True
@@ -105,9 +109,6 @@ def test_repeat_let_override_is_scoped(tmp_path):
     repeat = RepeatSpec(
         items="data",
         alias="row",
-        let={
-            "color": "'blue'",
-        },
     )
     template = TemplateSpec(
         source_path=tmp_path / "def.json",
@@ -117,9 +118,10 @@ def test_repeat_let_override_is_scoped(tmp_path):
                 type="rect",
                 attributes={"fill": "{color}"},
                 repeat=repeat,
+                let={"color": "'blue'"},
             )
         ],
-        let_bindings={
+        properties={
             "canvas": {"width": 100, "height": 100},
             "color": "red",
         },
@@ -128,14 +130,18 @@ def test_repeat_let_override_is_scoped(tmp_path):
     renderer = InfogrooveRenderer(template)
     base_context = renderer._build_base_context([{}])
     assert base_context["color"] == "red"
-    assert base_context["let"].color == "red"
+    assert base_context["properties"].color == "red"
 
     frame = renderer._build_repeat_context(base_context, repeat, {}, index=0, total=1)
 
+    element = template.template[0]
+    bindings = renderer._evaluate_bindings(element.let, frame, label="element:rect")
+    frame.update(renderer._make_accessible_bindings(bindings))
+
     assert frame["color"] == "blue"
-    assert frame["let"].color == "blue"
+    assert frame["properties"].color == "red"
     assert base_context["color"] == "red"
-    assert base_context["let"].color == "red"
+    assert base_context["properties"].color == "red"
 
 
 def test_repeat_alias_reserved_helpers_progress(sample_template):
@@ -198,7 +204,7 @@ def test_append_rejects_unknown_element(sample_template):
         source_path=sample_template.source_path,
         canvas=sample_template.canvas,
         template=[ElementSpec(type="unknown", attributes={})],
-        let_bindings=dict(sample_template.let_bindings),
+        properties=dict(sample_template.properties),
     )
     renderer = InfogrooveRenderer(bad_template)
 
@@ -211,7 +217,7 @@ def test_validate_data_uses_json_schema(sample_template):
         source_path=sample_template.source_path,
         canvas=sample_template.canvas,
         template=list(sample_template.template),
-        let_bindings=dict(sample_template.let_bindings),
+        properties=dict(sample_template.properties),
         num_elements_range=sample_template.num_elements_range,
         schema={
             "type": "array",
@@ -241,7 +247,7 @@ def test_infogroove_factory_returns_renderer(sample_template):
 def test_infogroove_factory_accepts_mapping():
     renderer = Infogroove(
         {
-            "let": {
+            "properties": {
                 "canvas": {"width": 120, "height": 40},
                 "gap": 10,
             },
@@ -252,9 +258,9 @@ def test_infogroove_factory_accepts_mapping():
                     "repeat": {
                         "items": "data",
                         "as": "row",
-                        "let": {
-                            "cx": "__index__ * gap",
-                        },
+                    },
+                    "let": {
+                        "cx": "__index__ * properties.gap",
                     },
                 }
             ],
@@ -269,7 +275,7 @@ def test_infogroove_factory_accepts_mapping():
 def test_render_supports_inline_attribute_expressions():
     renderer = Infogroove(
         {
-            "let": {"canvas": {"width": 60, "height": 80}},
+            "properties": {"canvas": {"width": 60, "height": 80}},
             "template": [
                 {
                     "type": "circle",

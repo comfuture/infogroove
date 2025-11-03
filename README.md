@@ -53,28 +53,31 @@ uv run --extra dev pytest --cov=infogroove --cov=tests
 A template definition is a JSON document with these top-level keys. The design
 aims to keep templates declarative and predictable:
 
-- **Explicit scopes.** Global `let` bindings establish shared context, while
-  `repeat.let` creates isolated, per-loop overlays. Values never bleed across
-  scope boundaries unless you intentionally rebind them.
-- **Deterministic evaluation.** Bindings resolve lazily the first time they
-  are referenced. Cycles are detected and reported early, preventing runaway
-  recursion and making intent obvious.
+- **Explicit scopes.** Global `properties` establish shared context, while
+  element-level `let` blocks create isolated overlays that run after any repeat
+  bindings. Values never bleed across scope boundaries unless you intentionally
+  rebind them.
+- **Deterministic evaluation.** Element `let` bindings resolve lazily the first
+  time they are referenced. Cycles are detected and reported early, preventing
+  runaway recursion and making intent obvious.
 - **Composable building blocks.** Elements remain small, nested structures.
   Complex layouts emerge from combining scoped bindings and child trees rather
   than inventing a verbose DSL.
 
-- `let`: Global bindings evaluated before rendering begins. Provide the
-  `canvas` size here (`width`, `height`) along with reusable constants such as
-  `palette`, `margin`, or `fontFamily`. Bindings can be literals or
-  expressions; results become available directly as `{margin}` (and are also
-  exposed under `let.margin` for compatibility). When you want to keep a plain
-  string literal, wrap it in quotes so it evaluates as a Python string (for
-  example, `"fontFamily": "'Inter, Arial, sans-serif'"`).
+- `properties`: Global assignments evaluated before rendering begins. Provide
+  the `canvas` size here (`width`, `height`) along with reusable constants such
+  as `palette`, `margin`, or `fontFamily`. Values are injected into the
+  rendering context as-is, so strings like `"Inter, Arial, sans-serif"` remain
+  literal.
 - `template`: A list of element descriptors. Each descriptor has a `type`,
-  optional attribute map, optional `text`, and optional `children`. Elements
-  render once unless a `repeat` block is present.
+  optional attribute map, optional `text`, optional `let`, and optional
+  `children`. Elements render once unless a `repeat` block is present.
 - `numElementsRange` (optional): Expected minimum and maximum number of input
   records for validation.
+
+Each element may declare its own `let` block. These bindings evaluate against
+the current context (including repeat helpers) and the results become available
+to the element's attributes and its children.
 
 The `repeat` block explicitly controls iteration:
 
@@ -83,11 +86,11 @@ The `repeat` block explicitly controls iteration:
   "type": "text",
   "repeat": {
     "items": "items",
-    "as": "row",
-    "let": {
-      "label": "row.label",
-      "x": "__index__ * 24"
-    }
+    "as": "row"
+  },
+  "let": {
+    "label": "row.label",
+    "x": "__index__ * 24"
   },
   "attributes": {"x": "{x}", "y": "40"},
   "text": "{label}"
@@ -95,20 +98,21 @@ The `repeat` block explicitly controls iteration:
 ```
 
 - `items` references the collection to iterate (any dotted path resolved via
-  `let`/data access).
+  the current context).
 - `as` names the current element. Use the reserved helpers (e.g. `__index__`,
   `__count__`) inside expressions when you need positional data; when the
   iterated item is a mapping, those helpers are also exposed on the alias (for
   example, `row.__index__`).
-- `let` injects per-iteration bindings scoped to that repeat. Expressions can
-  reference the current item, previously declared loop bindings, and globals.
+- Element `let` injects per-iteration bindings scoped to that element.
+  Expressions can reference the current item, previously declared loop
+  bindings, and globals.
 
 During iteration, Infogroove also injects reserved helpers such as `__index__`,
 `__first__`, `__last__`, `__count__`, and `__total__` for convenience.
 
 Placeholder syntax supports both `{path.to.value}` lookups and inline Python
 expressions such as `{__index__ * 10}` or `{canvas.width / 2}`. Expressions are
-evaluated inside the same safe context as loop bindings (global let values,
+evaluated inside the same safe context as loop bindings (global properties,
 data fields, derived metrics, and loop-scoped bindings).
 
 ## CLI Options
@@ -150,7 +154,7 @@ infographic directly with the `Infogroove` factory:
 from infogroove import Infogroove
 
 infographic = Infogroove({
-    "let": {
+    "properties": {
         "canvas": {"width": 200, "height": 40},
         "gap": 10,
     },
@@ -169,14 +173,11 @@ svg_inline = infographic.render([{}] * 10)
 ## Developing Templates
 
 - Keep shared constants (including canvas dimensions) under the top-level
-  `let` block.
-- Use `repeat` to make iteration explicit; push derived per-loop values into
-  its `let` bindings so they stay scoped to that block.
-- Inline expressions handle quick maths (`{__index__ * 10}`) while `repeat.let`
-  bindings are ideal for shared or multi-step calculations.
-- Wrap literal strings in quotes inside `let` blocks so they evaluate as Python
-  string expressions. This keeps values like font stacks (`"'Inter', 'Pretendard', Arial, sans-serif"`) or
-  CSS keywords from being parsed as variable references.
+  `properties` block.
+- Use `repeat` to make iteration explicit; push derived per-loop values into an
+  element's `let` block so they stay scoped to that element.
+- Inline expressions handle quick maths (`{__index__ * 10}`) while element
+  `let` bindings are ideal for shared or multi-step calculations.
 - Let bindings resolve lazily, so the order you declare keys does not matter.
   However, circular definitions (e.g. `total: "max"`, `max: "total"`) will be
   rejected with a clear error. Break cycles by lifting shared calculations into

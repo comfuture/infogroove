@@ -1,7 +1,7 @@
 {
   "name": "Alternating Keyword Timeline",
   "description": "Aligns keyword/description pairs on alternating sides of a central axis.",
-  "let": {
+  "properties": {
     "canvas": {
       "width": 960,
       "height": 720
@@ -13,7 +13,7 @@
     "keywordPadding": 24,
     "connectorLength": 140,
     "axisColor": "#cbd5f5",
-    "fontFamily": "'Inter, Arial, sans-serif'",
+    "fontFamily": "Inter, Arial, sans-serif",
     "keywordColor": "#1f2937",
     "descriptionColor": "#4b5563",
     "badgeFill": "#e0f2fe"
@@ -45,21 +45,21 @@
       "type": "g",
       "repeat": {
         "items": "items",
-        "as": "entry",
-        "let": {
-          "keyword": "entry.keyword",
-          "description": "entry.description",
-          "y": "marginTop + __index__ * rowSpacing",
-          "isEven": "__index__ % 2",
-          "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
-          "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
-          "keywordAnchor": "'start' if isEven == 0 else 'end'",
-          "descriptionAnchor": "'end' if isEven == 0 else 'start'",
-          "badgeX": "keywordX",
-          "badgeY": "y - 36",
-          "connectorX1": "axisX",
-          "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
-        }
+        "as": "entry"
+      },
+      "let": {
+        "keyword": "entry.keyword",
+        "description": "entry.description",
+        "y": "marginTop + __index__ * rowSpacing",
+        "isEven": "__index__ % 2",
+        "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
+        "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
+        "keywordAnchor": "'start' if isEven == 0 else 'end'",
+        "descriptionAnchor": "'end' if isEven == 0 else 'start'",
+        "badgeX": "keywordX",
+        "badgeY": "y - 36",
+        "connectorX1": "axisX",
+        "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
       },
       "children": [
         {

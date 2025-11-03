@@ -1,7 +1,7 @@
 {
   "name": "Key Messages",
   "description": "Highlights a primary message above supporting messages.",
-  "let": {
+  "properties": {
     "canvas": {
       "width": 1024,
       "height": 576
@@ -10,7 +10,7 @@
     "gap": 32,
     "background": "#120613",
     "cardRadius": 28,
-    "fontFamily": "\"'Inter', 'Pretendard', Arial, sans-serif\"",
+    "fontFamily": "'Inter', 'Pretendard', Arial, sans-serif",
     "leadGradientStart": "#ff2d95",
     "leadGradientEnd": "#b5147a",
     "cardGradientStart": "#ff9ad1",
@@ -95,38 +95,38 @@
       "type": "g",
       "repeat": {
         "items": "items",
-        "as": "entry",
-        "let": {
-          "title": "entry.title",
-          "subtitle": "entry.subtitle",
-          "halfHeight": "canvasHeight / 2",
-          "sectionGap": "gap",
-          "leadWidth": "canvasWidth - margin * 2",
-          "leadX": "margin",
-          "leadY": "margin",
-          "leadHeight": "halfHeight - margin - sectionGap / 2",
-          "leadDisplay": "'inline' if __first__ else 'none'",
-          "nonLeadDisplay": "'inline' if not __first__ else 'none'",
-          "bottomY": "halfHeight + sectionGap / 2",
-          "bottomHeight": "canvasHeight - bottomY - margin",
-          "nonLeadCount": "max(__total__ - 1, 1)",
-          "nonLeadIndex": "max(__index__ - 1, 0)",
-          "cardWidth": "((canvasWidth - margin * 2) - gap * (nonLeadCount - 1)) / nonLeadCount if __index__ > 0 else 0",
-          "cardHeight": "bottomHeight",
-          "cardX": "margin + nonLeadIndex * (cardWidth + gap)",
-          "cardY": "bottomY",
-          "leadTitleX": "leadX + 40",
-          "leadTitleY": "leadY + 110",
-          "leadSubtitleY": "leadY + 148",
-          "cardTitleX": "cardX + 28",
-          "cardTitleY": "cardY + 82",
-          "cardSubtitleY": "cardY + 132",
-          "subtitleClipId": "f'keyMsgClip_{__index__}'",
-          "subtitleClipX": "leadTitleX if __first__ else cardTitleX",
-          "subtitleClipY": "leadSubtitleY - 4 if __first__ else cardSubtitleY - 4",
-          "subtitleClipWidth": "(leadWidth - 88) if __first__ else max(cardWidth - 56, 0)",
-          "subtitleClipHeight": "(leadHeight - 120) if __first__ else max(cardHeight - 140, 0)"
-        }
+        "as": "entry"
+      },
+      "let": {
+        "title": "entry.title",
+        "subtitle": "entry.subtitle",
+        "halfHeight": "canvasHeight / 2",
+        "sectionGap": "gap",
+        "leadWidth": "canvasWidth - margin * 2",
+        "leadX": "margin",
+        "leadY": "margin",
+        "leadHeight": "halfHeight - margin - sectionGap / 2",
+        "leadDisplay": "'inline' if __first__ else 'none'",
+        "nonLeadDisplay": "'inline' if not __first__ else 'none'",
+        "bottomY": "halfHeight + sectionGap / 2",
+        "bottomHeight": "canvasHeight - bottomY - margin",
+        "nonLeadCount": "max(__total__ - 1, 1)",
+        "nonLeadIndex": "max(__index__ - 1, 0)",
+        "cardWidth": "((canvasWidth - margin * 2) - gap * (nonLeadCount - 1)) / nonLeadCount if __index__ > 0 else 0",
+        "cardHeight": "bottomHeight",
+        "cardX": "margin + nonLeadIndex * (cardWidth + gap)",
+        "cardY": "bottomY",
+        "leadTitleX": "leadX + 40",
+        "leadTitleY": "leadY + 110",
+        "leadSubtitleY": "leadY + 148",
+        "cardTitleX": "cardX + 28",
+        "cardTitleY": "cardY + 82",
+        "cardSubtitleY": "cardY + 132",
+        "subtitleClipId": "f'keyMsgClip_{__index__}'",
+        "subtitleClipX": "leadTitleX if __first__ else cardTitleX",
+        "subtitleClipY": "leadSubtitleY - 4 if __first__ else cardSubtitleY - 4",
+        "subtitleClipWidth": "(leadWidth - 88) if __first__ else max(cardWidth - 56, 0)",
+        "subtitleClipHeight": "(leadHeight - 120) if __first__ else max(cardHeight - 140, 0)"
       },
       "children": [
         {
