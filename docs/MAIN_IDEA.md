@@ -89,7 +89,8 @@ When downstream tooling wants to work with the pre-SVG node graph, call
 
 ```python
 renderer = load_path("examples/arc-circles/def.json")
-nodes = renderer.translate(payload)
+data = {"items": [{"label": "Example", "value": 10}]}
+nodes = renderer.translate(data)
 # → [{"type": "rect", "attributes": {...}, "children": []}, ...]
 ```
 
