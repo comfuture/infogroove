@@ -46,8 +46,8 @@ parses the payload into strongly-typed models that the renderer consumes.
   "formulas": {
     "spanWidth": "canvas.width - 2 * margin",
     "barWidth": "spanWidth * (value / maxValue)",
-    "barY": "margin + index * (barHeight + 20)",
-    "colorIndex": "index % colors.length",
+    "barY": "margin + __index__ * (barHeight + 20)",
+    "colorIndex": "__index__ % colors.length",
     "barColor": "colors[colorIndex]"
   },
   "elements": [

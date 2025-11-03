@@ -148,15 +148,14 @@ def _parse_element(entry: Any) -> ElementSpec:
             raise TemplateError("Repeat bindings require a string 'items' path")
         if not isinstance(alias, str) or not alias:
             raise TemplateError("Repeat bindings require a string 'as' alias")
-        index_name = repeat_block.get("index")
-        if index_name is not None and not isinstance(index_name, str):
-            raise TemplateError("Repeat 'index' must be a string when provided")
+        if "index" in repeat_block:
+            raise TemplateError("Repeat 'index' is no longer supported; use __index__ helper variables")
         let_block = repeat_block.get("let", {})
         if let_block is None:
             let_block = {}
         if not isinstance(let_block, Mapping):
             raise TemplateError("Repeat 'let' bindings must be declared as a mapping when provided")
-        repeat = RepeatSpec(items=items, alias=alias, index=index_name, let=dict(let_block))
+        repeat = RepeatSpec(items=items, alias=alias, let=dict(let_block))
 
     children_block = entry.get("children", [])
     if children_block is None:

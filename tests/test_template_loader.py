@@ -119,8 +119,8 @@ def test_parse_template_requires_canvas_dimensions(tmp_path):
             "Repeat bindings require",
         ),
         (
-            lambda payload: payload["template"][1]["repeat"].update({"index": 2}),
-            "Repeat 'index' must",
+            lambda payload: payload["template"][1]["repeat"].update({"index": "idx"}),
+            "Repeat 'index' is no longer supported",
         ),
         (
             lambda payload: payload["template"][1]["repeat"].update({"let": []}),

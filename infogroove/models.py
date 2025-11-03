@@ -21,7 +21,6 @@ class RepeatSpec:
 
     items: str
     alias: str
-    index: str | None = None
     let: Mapping[str, Any] = field(default_factory=dict)
 
 
