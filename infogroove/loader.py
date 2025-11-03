@@ -11,28 +11,37 @@ from jsonschema.validators import validator_for
 
 from .exceptions import TemplateError
 from .models import CanvasSpec, ElementSpec, RepeatSpec, TemplateSpec
-from .renderer import InfogrooveRenderer
+from .renderer import ElementRenderer, InfogrooveRenderer
 
 
-def load(handle: IO[str]) -> InfogrooveRenderer:
+def load(handle: IO[str], *, renderers: Mapping[str, ElementRenderer] | None = None) -> InfogrooveRenderer:
     """Load an infographic definition from a text stream."""
 
     raw_text = handle.read()
     source_name = getattr(handle, "name", None)
     source_path = Path(source_name) if isinstance(source_name, str) and source_name else None
     template = _template_from_text(raw_text, source_path)
-    return InfogrooveRenderer(template)
+    return InfogrooveRenderer(template, renderers=renderers)
 
 
-def loads(data: str, *, source: str | Path | None = None) -> InfogrooveRenderer:
+def loads(
+    data: str,
+    *,
+    source: str | Path | None = None,
+    renderers: Mapping[str, ElementRenderer] | None = None,
+) -> InfogrooveRenderer:
     """Load an infographic definition from a JSON string."""
 
     source_path = Path(source) if source is not None else None
     template = _template_from_text(data, source_path)
-    return InfogrooveRenderer(template)
+    return InfogrooveRenderer(template, renderers=renderers)
 
 
-def load_path(path: str | Path) -> InfogrooveRenderer:
+def load_path(
+    path: str | Path,
+    *,
+    renderers: Mapping[str, ElementRenderer] | None = None,
+) -> InfogrooveRenderer:
     """Load and parse a template definition from a filesystem path."""
 
     template_path = Path(path)
@@ -41,7 +50,7 @@ def load_path(path: str | Path) -> InfogrooveRenderer:
     except OSError as exc:  # pragma: no cover - filesystem dependent
         raise TemplateError(f"Unable to read template '{template_path}'") from exc
     template = _template_from_text(raw_text, template_path)
-    return InfogrooveRenderer(template)
+    return InfogrooveRenderer(template, renderers=renderers)
 
 
 def _template_from_text(raw_text: str, source: Path | None) -> TemplateSpec:

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from infogroove.core import Infogroove
@@ -74,6 +76,19 @@ def test_render_combines_canvas_and_items(sample_template):
     assert "A: 6" in svg_markup
     assert "B: 8" in svg_markup
     assert "font-size=\"12\"" in svg_markup
+
+
+def test_translate_returns_node_specs(sample_template):
+    renderer = InfogrooveRenderer(sample_template)
+    payload = {"items": [{"label": "Only", "value": 9}]}
+
+    node_specs = renderer.translate(payload)
+
+    assert [node["type"] for node in node_specs] == ["rect", "text"]
+    assert all("children" in node for node in node_specs)
+    assert node_specs[1]["text"] == "Only: 18.0"
+    # Ensure JSON roundtrip compatibility
+    assert json.loads(json.dumps(node_specs, ensure_ascii=False)) == node_specs
 
 
 def test_build_base_context_computes_metrics(sample_template):
@@ -410,3 +425,58 @@ def test_render_supports_inline_attribute_expressions():
     assert "cx=\"0\"" in markup
     assert "cx=\"10\"" in markup
     assert "cy=\"40.0\"" in markup
+
+
+def test_custom_renderer_handles_icon_elements(tmp_path):
+    template = TemplateSpec(
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=96, height=96),
+        template=[
+            ElementSpec(
+                type="icon",
+                attributes={"name": "{item.name}", "size": "{size}"},
+                repeat=RepeatSpec(items="icons", alias="item"),
+            )
+        ],
+        properties={"canvas": {"width": 96, "height": 96}, "size": 24},
+    )
+
+    renderer = InfogrooveRenderer(template)
+
+    def fake_icon_renderer(payload, context):
+        icon_name = payload.attributes["name"]
+        size = payload.attributes.get("size", "24")
+        if icon_name == "heart":
+            shape = {
+                "type": "path",
+                "attributes": {"d": "M1 1 L2 2 L1 3 Z"},
+            }
+        else:
+            shape = {
+                "type": "polygon",
+                "attributes": {"points": "0,0 2,0 1,2"},
+            }
+        wrapper = {
+            "type": "g",
+            "attributes": {"data-icon": icon_name, "data-size": size},
+            "children": [shape],
+        }
+        return [wrapper]
+
+    renderer.register_renderer("icon", fake_icon_renderer)
+
+    payload = {"icons": [{"name": "heart"}, {"name": "star"}]}
+
+    node_specs = renderer.translate(payload)
+
+    assert len(node_specs) == 2
+    assert node_specs[0]["attributes"]["data-icon"] == "heart"
+    assert node_specs[0]["children"][0]["type"] == "path"
+    assert node_specs[1]["attributes"]["data-icon"] == "star"
+    assert node_specs[1]["children"][0]["type"] == "polygon"
+
+    svg_markup = renderer.render(payload)
+
+    assert "data-icon=\"heart\"" in svg_markup
+    assert "data-icon=\"star\"" in svg_markup
+    assert "<path d=\"M1 1 L2 2 L1 3 Z\"" in svg_markup
