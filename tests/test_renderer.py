@@ -93,6 +93,13 @@ def test_repeat_context_injects_reserved_variables(sample_template):
     assert frame["label"] == "Hello"
     assert frame["double"] == 4
 
+    item_alias = frame["item"]
+    assert item_alias["__index__"] == 0
+    assert item_alias["__count__"] == 1
+    assert item_alias["__total__"] == 1
+    assert item_alias["__first__"] is True
+    assert item_alias["__last__"] is True
+
 
 def test_repeat_let_override_is_scoped(tmp_path):
     repeat = RepeatSpec(
@@ -129,6 +136,45 @@ def test_repeat_let_override_is_scoped(tmp_path):
     assert frame["let"].color == "blue"
     assert base_context["color"] == "red"
     assert base_context["let"].color == "red"
+
+
+def test_repeat_alias_reserved_helpers_progress(sample_template):
+    renderer = InfogrooveRenderer(sample_template)
+    base_context = renderer._build_base_context([
+        {"label": "A", "value": 1},
+        {"label": "B", "value": 2},
+    ])
+    repeat = sample_template.template[1].repeat
+    assert repeat is not None
+
+    first_frame = renderer._build_repeat_context(
+        base_context,
+        repeat,
+        {"label": "A", "value": 1},
+        index=0,
+        total=2,
+    )
+    second_frame = renderer._build_repeat_context(
+        base_context,
+        repeat,
+        {"label": "B", "value": 2},
+        index=1,
+        total=2,
+    )
+
+    first_alias = first_frame["item"]
+    assert first_alias["__index__"] == 0
+    assert first_alias["__count__"] == 1
+    assert first_alias["__total__"] == 2
+    assert first_alias["__first__"] is True
+    assert first_alias["__last__"] is False
+
+    second_alias = second_frame["item"]
+    assert second_alias["__index__"] == 1
+    assert second_alias["__count__"] == 2
+    assert second_alias["__total__"] == 2
+    assert second_alias["__first__"] is False
+    assert second_alias["__last__"] is True
 
 
 def test_validate_data_checks_sequence(sample_template):
