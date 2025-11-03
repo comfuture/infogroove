@@ -20,10 +20,10 @@ models that the renderer consumes.
   `type` (rect, text, polygon, path, etc.), an `attributes` dictionary whose
   values may contain placeholders, optional `text` content, optional `let`
   bindings, optional `repeat` declarations, and optional `children`.
-- **`numElementsRange`** – Optional `[min, max]` constraint that is enforced
-  against the input data length.
 - **`schema`** – Optional JSON Schema definition validated at render time to
-  guarantee input shape correctness.
+  guarantee input shape correctness. Provide a root schema (typically an
+  object with one or more collections such as `items`, `values`, or `points`)
+  and describe any nested iterables consumed by the template.
 - **`metadata`** – Optional informational fields (`name`, `description`,
   `version`) preserved for downstream tooling.
 
@@ -90,8 +90,8 @@ Before rendering begins the renderer:
 
 1. Materialises the incoming data into a list and ensures each entry is a
    mapping.
-2. Enforces `numElementsRange` boundaries when present.
-3. Validates against the optional JSON Schema.
+2. Applies `minItems`/`maxItems` constraints derived from the template schema.
+3. Validates against the JSON Schema definition when provided.
 
 Violations raise `DataValidationError` so the CLI and embedding applications
 can surface helpful messages.
