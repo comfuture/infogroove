@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import IO, Any, Mapping
+from typing import IO, Any, Mapping, MutableMapping
+
+from jsonschema import SchemaError
+from jsonschema.validators import validator_for
 
 from .exceptions import TemplateError
 from .models import CanvasSpec, ElementSpec, RepeatSpec, TemplateSpec
@@ -94,12 +97,10 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
         raise TemplateError("'template' must be provided as a list of element mappings")
     template = [_parse_element(entry) for entry in template_block]
 
-    range_block = payload.get("numElementsRange")
-    range_tuple: tuple[int, int] | None = None
-    if isinstance(range_block, list) and len(range_block) == 2:
-        range_tuple = (int(range_block[0]), int(range_block[1]))
+    if "numElementsRange" in payload:
+        raise TemplateError("'numElementsRange' is no longer supported; declare bounds with schema 'minItems' and 'maxItems'")
 
-    schema_block = payload.get("schema") if isinstance(payload.get("schema"), Mapping) else None
+    schema_block = _parse_schema(payload)
 
     metadata = {
         key: payload[key]
@@ -112,8 +113,7 @@ def _parse_template(path: Path, payload: Mapping[str, Any]) -> TemplateSpec:
         canvas=canvas,
         template=template,
         properties=dict(properties),
-        num_elements_range=range_tuple,
-        schema=schema_block,  # type: ignore[arg-type]
+        schema=schema_block,
         metadata=metadata,
     )
 
@@ -170,3 +170,18 @@ def _parse_element(entry: Any) -> ElementSpec:
         raise TemplateError("Element children must be declared as a list when provided")
 
     return ElementSpec(type=element_type, attributes=attributes, text=text, repeat=repeat, let=dict(let_block), children=children)
+
+
+def _parse_schema(payload: Mapping[str, Any]) -> MutableMapping[str, Any] | None:
+    schema = payload.get("schema")
+    if schema is None:
+        return None
+    if not isinstance(schema, Mapping):
+        raise TemplateError("'schema' must be declared as a mapping containing a JSON Schema definition")
+    schema_mapping: MutableMapping[str, Any] = dict(schema)
+    try:
+        validator = validator_for(schema_mapping)
+        validator.check_schema(schema_mapping)
+    except SchemaError as exc:  # pragma: no cover - depends on validator details
+        raise TemplateError(f"Template schema definition is invalid: {exc}") from exc
+    return schema_mapping

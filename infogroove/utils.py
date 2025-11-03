@@ -82,6 +82,51 @@ def _unwrap_accessible(value: Any) -> Any:
     return value
 
 
+def derive_schema_item_bounds(schema: Mapping[str, Any]) -> tuple[int | None, int | None]:
+    """Return ``(minItems, maxItems)`` for a JSON Schema array definition when available."""
+
+    type_decl = schema.get("type")
+    if _schema_may_be_array(type_decl) or "minItems" in schema or "maxItems" in schema:
+        min_value = _coerce_non_negative_int(schema.get("minItems"))
+        max_value = _coerce_non_negative_int(schema.get("maxItems"))
+        return (min_value, max_value)
+
+    if isinstance(type_decl, str) and type_decl == "object":
+        properties = schema.get("properties")
+        if isinstance(properties, Mapping):
+            for key in ("items", "data", "values"):
+                candidate = properties.get(key)
+                if isinstance(candidate, Mapping):
+                    bounds = derive_schema_item_bounds(candidate)
+                    if bounds != (None, None):
+                        return bounds
+            for candidate in properties.values():
+                if isinstance(candidate, Mapping):
+                    bounds = derive_schema_item_bounds(candidate)
+                    if bounds != (None, None):
+                        return bounds
+
+    return (None, None)
+
+
+def _schema_may_be_array(type_decl: Any) -> bool:
+    if isinstance(type_decl, str):
+        return type_decl == "array"
+    if isinstance(type_decl, Sequence) and not isinstance(type_decl, (str, bytes)):
+        return any(item == "array" for item in type_decl if isinstance(item, str))
+    return False
+
+
+def _coerce_non_negative_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float) and value.is_integer() and value >= 0:
+        return int(value)
+    return None
+
+
 def tokenize_path(expression: str) -> list[str]:
     """Split a dotted and bracketed path into individual navigation tokens."""
 
