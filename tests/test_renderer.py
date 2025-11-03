@@ -61,7 +61,7 @@ def test_build_base_context_computes_metrics(sample_template):
 
     context = renderer._build_base_context(dataset)
 
-    assert context["canvasWidth"] == 200
+    assert context["canvas"]["width"] == 200
     assert context["canvas"]["height"] == 100
     assert context["properties"].gap == 24
     assert context["values"] == [5, 15]

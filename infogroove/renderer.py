@@ -155,11 +155,18 @@ class InfogrooveRenderer:
 
         dataset = self._validate_data(data)
         base_context = self._build_base_context(dataset)
-        svg_root = SVG(
-            width=base_context.get("canvasWidth", self._template.canvas.width),
-            height=base_context.get("canvasHeight", self._template.canvas.height),
-            elements=[],
-        )
+        canvas_context = base_context.get("canvas")
+        width = self._template.canvas.width
+        height = self._template.canvas.height
+        if isinstance(canvas_context, Mapping):
+            try:
+                width = float(canvas_context["width"])
+                height = float(canvas_context["height"])
+            except (KeyError, TypeError, ValueError):
+                width = self._template.canvas.width
+                height = self._template.canvas.height
+
+        svg_root = SVG(width=width, height=height, elements=[])
 
         nodes: list[Any] = []
         for element in self._template.template:
@@ -304,28 +311,19 @@ class InfogrooveRenderer:
         canvas_binding = properties.get("canvas")
         if isinstance(canvas_binding, Mapping):
             canvas_dict = {key: canvas_binding[key] for key in canvas_binding}
-        else:
-            canvas_dict = {
-                "width": self._template.canvas.width,
-                "height": self._template.canvas.height,
-            }
-
-        width = float(canvas_dict.get("width", self._template.canvas.width))
-        height = float(canvas_dict.get("height", self._template.canvas.height))
-        canvas_dict["width"] = width
-        canvas_dict["height"] = height
-        properties["canvas"] = canvas_dict
+            try:
+                canvas_dict["width"] = float(canvas_dict.get("width", self._template.canvas.width))
+                canvas_dict["height"] = float(canvas_dict.get("height", self._template.canvas.height))
+            except (TypeError, ValueError):
+                canvas_dict.setdefault("width", self._template.canvas.width)
+                canvas_dict.setdefault("height", self._template.canvas.height)
+            properties["canvas"] = canvas_dict
 
         accessible_properties = self._make_accessible_bindings(properties)
         context.update(accessible_properties)
         properties_adapter = ensure_accessible(accessible_properties)
         context["properties"] = properties_adapter
         context["variables"] = properties_adapter  # backwards-friendly alias
-        context["canvas"] = accessible_properties["canvas"]
-        context["canvasWidth"] = width
-        context["canvasHeight"] = height
-        context["canvas_width"] = width
-        context["canvas_height"] = height
 
         return context
 
