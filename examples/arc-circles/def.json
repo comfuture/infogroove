@@ -1,7 +1,7 @@
 {
   "name": "Arc Positioned Circles",
   "description": "Places circular milestones along an arc projected from below the viewport.",
-  "variables": {
+  "let": {
     "canvas": {
       "width": 1280,
       "height": 640
@@ -21,66 +21,78 @@
       "#22d3ee",
       "#06b6d4",
       "#0284c7"
-    ]
+    ],
+    "background": "#f0f9ff"
   },
-  "formulas": {
-    "centerX": "canvas.width / 2",
-    "centerY": "canvas.height + arcOffset",
-    "step": "arcSpan / max(total - 1, 1)",
-    "angle": "startAngle + index * step",
-    "angleRad": "angle * Math.pi / 180",
-    "cx": "centerX + radius * Math.cos(angleRad)",
-    "cy": "centerY - radius * Math.sin(angleRad)",
-    "fillColor": "palette[index % palette.length]",
-    "labelY": "cy - radiusLabelOffset"
-  },
-  "elements": [
+  "template": [
     {
       "type": "rect",
-      "scope": "canvas",
       "attributes": {
         "x": "0",
         "y": "0",
         "width": "100%",
         "height": "100%",
-        "fill": "#f0f9ff"
+        "fill": "{background}"
       }
     },
     {
-      "type": "circle",
-      "attributes": {
-        "cx": "{cx}",
-        "cy": "{cy}",
-        "r": "{bubbleRadius}",
-        "fill": "{fillColor}",
-        "opacity": "0.92"
-      }
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{cx}",
-        "y": "{labelY}",
-        "fill": "{labelColor}",
-        "fontFamily": "{fontFamily}",
-        "fontSize": "22",
-        "fontWeight": "600",
-        "textAnchor": "middle"
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry",
+        "index": "idx",
+        "let": {
+          "label": "entry.label",
+          "value": "entry.value",
+          "centerX": "canvas.width / 2",
+          "centerY": "canvas.height + arcOffset",
+          "step": "arcSpan / max(total - 1, 1)",
+          "angle": "startAngle + idx * step",
+          "angleRad": "angle * Math.pi / 180",
+          "cx": "centerX + radius * Math.cos(angleRad)",
+          "cy": "centerY - radius * Math.sin(angleRad)",
+          "fillColor": "palette[idx % palette.length]",
+          "labelY": "cy - radiusLabelOffset"
+        }
       },
-      "text": "{label}"
-    },
-    {
-      "type": "text",
-      "attributes": {
-        "x": "{cx}",
-        "y": "{cy} + 6",
-        "fill": "{valueColor}",
-        "fontFamily": "{fontFamily}",
-        "fontSize": "20",
-        "textAnchor": "middle",
-        "dominantBaseline": "middle"
-      },
-      "text": "{value}"
+      "children": [
+        {
+          "type": "circle",
+          "attributes": {
+            "cx": "{cx}",
+            "cy": "{cy}",
+            "r": "{bubbleRadius}",
+            "fill": "{fillColor}",
+            "opacity": "0.92"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{cx}",
+            "y": "{labelY}",
+            "fill": "{labelColor}",
+            "fontFamily": "{fontFamily}",
+            "fontSize": "22",
+            "fontWeight": "600",
+            "textAnchor": "middle"
+          },
+          "text": "{label}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{cx}",
+            "y": "{cy} + 6",
+            "fill": "{valueColor}",
+            "fontFamily": "{fontFamily}",
+            "fontSize": "20",
+            "textAnchor": "middle",
+            "dominantBaseline": "middle"
+          },
+          "text": "{value}"
+        }
+      ]
     }
   ]
 }
