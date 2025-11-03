@@ -42,15 +42,15 @@ def test_main_renders_svg_end_to_end(tmp_path):
     template_path.write_text(
         json.dumps(
             {
-                "variables": {"canvas": {"width": 100, "height": 100}},
-                "elements": [
+                "let": {"canvas": {"width": 100, "height": 100}},
+                "template": [
                     {
                         "type": "text",
-                        "attributes": {"x": 0, "y": 0},
+                        "attributes": {"x": "0", "y": "0"},
                         "text": "{item.label}",
+                        "repeat": {"items": "data", "as": "item"},
                     }
                 ],
-                "formulas": {},
             }
         ),
         encoding="utf-8",
@@ -80,15 +80,13 @@ def test_render_svg_helper(tmp_path, payload):
     template_path.write_text(
         json.dumps(
             {
-                "variables": {"canvas": {"width": 100, "height": 100}},
-                "elements": [
+                "let": {"canvas": {"width": 100, "height": 100}},
+                "template": [
                     {
                         "type": "rect",
                         "attributes": {"width": "{canvas.width}", "height": "10"},
-                        "scope": "canvas",
                     }
                 ],
-                "formulas": {},
             }
         ),
         encoding="utf-8",

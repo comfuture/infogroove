@@ -10,23 +10,31 @@ from infogroove.renderer import InfogrooveRenderer
 
 def make_template_payload(**overrides):
     payload = {
-        "variables": {
+        "let": {
             "canvas": {"width": 800, "height": 600},
             "color": "#fff",
+            "greeting": "'hello'",
         },
-        "elements": [
+        "template": [
             {
                 "type": "rect",
-                "attributes": {"width": 10, "height": 20},
-                "scope": "canvas",
+                "attributes": {"width": "10", "height": "20"},
             },
             {
                 "type": "text",
-                "attributes": {"x": 0, "y": 0},
-                "text": "hello",
+                "attributes": {"x": "0", "y": "0"},
+                "text": "{label}",
+                "repeat": {
+                    "items": "data",
+                    "as": "item",
+                    "index": "idx",
+                    "let": {
+                        "label": "item.label",
+                        "line": "f'{idx + 1}. {item.label}'",
+                    },
+                },
             },
         ],
-        "formulas": {"double": "value * 2"},
         "numElementsRange": [1, 3],
         "schema": {"type": "array"},
         "name": "Example",
@@ -48,11 +56,10 @@ def test_load_path_returns_renderer(tmp_path):
 
     assert template.source_path == template_path
     assert template.canvas.width == 800
-    assert template.elements[0].scope == "canvas"
-    assert template.elements[1].text == "hello"
-    assert template.formulas["double"] == "value * 2"
-    assert template.variables["color"] == "#fff"
-    assert template.variables["canvas"]["height"] == 600
+    assert template.template[0].repeat is None
+    assert template.template[1].repeat is not None
+    assert template.let_bindings["color"] == "#fff"
+    assert template.let_bindings["canvas"]["height"] == 600
     assert template.num_elements_range == (1, 3)
     assert template.schema == {"type": "array"}
     assert template.metadata == {
@@ -79,26 +86,9 @@ def test_loads_accepts_raw_strings(tmp_path):
     assert renderer.template.canvas.width == 800
 
 
-def test_parse_template_treats_missing_formulas_as_empty(tmp_path):
-    payload = make_template_payload()
-    payload.pop("formulas")
-
-    spec = _parse_template(tmp_path / "def.json", payload)
-
-    assert spec.formulas == {}
-
-
-def test_parse_template_treats_none_formulas_as_empty(tmp_path):
-    payload = make_template_payload(formulas=None)
-
-    spec = _parse_template(tmp_path / "def.json", payload)
-
-    assert spec.formulas == {}
-
-
 def test_parse_template_requires_canvas_dimensions(tmp_path):
     payload = make_template_payload()
-    payload["variables"]["canvas"] = {"width": 400}
+    payload["let"]["canvas"] = {"width": 400}
 
     with pytest.raises(TemplateError, match="Both canvas width and height"):
         _parse_template(tmp_path / "def.json", payload)
@@ -107,27 +97,36 @@ def test_parse_template_requires_canvas_dimensions(tmp_path):
 @pytest.mark.parametrize(
     "mutator, message",
     [
-        (lambda payload: payload.update({"variables": "oops"}), "'variables' must"),
-        (lambda payload: payload["variables"].pop("canvas"), "'variables.canvas' must"),
-        (lambda payload: payload["variables"].update({"canvas": "oops"}), "'variables.canvas' must"),
-        (lambda payload: payload["variables"].update({"canvas": {}}), "Both canvas width"),
-        (lambda payload: payload.update({"screen": {"width": 1, "height": 2}}), "Canvas dimensions must"),
-        (lambda payload: payload.update({"screenWidth": 100}), "Canvas dimensions must"),
-        (lambda payload: payload.update({"elements": {}}), "'elements' must"),
-        (lambda payload: payload.update({"elements": [{"type": 1}]}), "Element definitions require"),
+        (lambda payload: payload.update({"let": "oops"}), "'let' must"),
+        (lambda payload: payload["let"].pop("canvas"), "'let.canvas' must"),
+        (lambda payload: payload["let"].update({"canvas": "oops"}), "'let.canvas' must"),
+        (lambda payload: payload["let"]["canvas"].pop("height"), "Both canvas width"),
+        (lambda payload: payload.update({"template": {}}), "'template' must"),
+        (lambda payload: payload.update({"template": [{"type": 1}]}), "Element definitions require"),
         (
-            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": []}]}),
+            lambda payload: payload.update({"template": [{"type": "rect", "attributes": []}]}),
             "Element attributes must",
         ),
         (
-            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": {}, "text": 1}]}),
+            lambda payload: payload.update({"template": [{"type": "rect", "attributes": {}, "text": 1}]}),
             "Element text must",
         ),
         (
-            lambda payload: payload.update({"elements": [{"type": "rect", "attributes": {}, "scope": "row"}]}),
-            "Element scope must",
+            lambda payload: payload["template"][1]["repeat"].update({"items": 3}),
+            "Repeat bindings require",
         ),
-        (lambda payload: payload.update({"formulas": []}), "'formulas' must"),
+        (
+            lambda payload: payload["template"][1]["repeat"].update({"as": 1}),
+            "Repeat bindings require",
+        ),
+        (
+            lambda payload: payload["template"][1]["repeat"].update({"index": 2}),
+            "Repeat 'index' must",
+        ),
+        (
+            lambda payload: payload["template"][1]["repeat"].update({"let": []}),
+            "Repeat 'let' bindings must",
+        ),
         (lambda payload: payload.update({"styles": {}}), "'styles' is no longer supported"),
     ],
 )
