@@ -6,15 +6,15 @@
       "width": 1280,
       "height": 640
     },
-    "arcSpan": 140,
-    "startAngle": 20,
+    "arc_span": 140,
+    "start_angle": 20,
     "radius": 460,
-    "arcOffset": 60,
-    "bubbleRadius": 48,
-    "radiusLabelOffset": 72,
-    "fontFamily": "Inter, Arial, sans-serif",
-    "labelColor": "#0f172a",
-    "valueColor": "#1e3a8a",
+    "arc_offset": 60,
+    "bubble_radius": 48,
+    "radius_label_offset": 72,
+    "font_family": "Inter, Arial, sans-serif",
+    "label_color": "#0f172a",
+    "value_color": "#1e3a8a",
     "palette": [
       "#0ea5e9",
       "#38bdf8",
@@ -44,15 +44,15 @@
       "let": {
         "label": "entry.label",
         "value": "entry.value",
-        "centerX": "canvas.width / 2",
-        "centerY": "canvas.height + arcOffset",
-        "step": "arcSpan / max(__total__ - 1, 1)",
-        "angle": "startAngle + __index__ * step",
-        "angleRad": "angle * Math.pi / 180",
-        "cx": "centerX + radius * Math.cos(angleRad)",
-        "cy": "centerY - radius * Math.sin(angleRad)",
-        "fillColor": "palette[__index__ % palette.length]",
-        "labelY": "cy - radiusLabelOffset"
+        "center_x": "canvas.width / 2",
+        "center_y": "canvas.height + arc_offset",
+        "step": "arc_span / max(__total__ - 1, 1)",
+        "angle": "start_angle + __index__ * step",
+        "angle_rad": "angle * Math.pi / 180",
+        "cx": "center_x + radius * Math.cos(angle_rad)",
+        "cy": "center_y - radius * Math.sin(angle_rad)",
+        "fill_color": "palette[__index__ % palette.length]",
+        "label_y": "cy - radius_label_offset"
       },
       "children": [
         {
@@ -60,8 +60,8 @@
           "attributes": {
             "cx": "{cx}",
             "cy": "{cy}",
-            "r": "{bubbleRadius}",
-            "fill": "{fillColor}",
+            "r": "{bubble_radius}",
+            "fill": "{fill_color}",
             "opacity": "0.92"
           }
         },
@@ -69,9 +69,9 @@
           "type": "text",
           "attributes": {
             "x": "{cx}",
-            "y": "{labelY}",
-            "fill": "{labelColor}",
-            "fontFamily": "{fontFamily}",
+            "y": "{label_y}",
+            "fill": "{label_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "22",
             "fontWeight": "600",
             "textAnchor": "middle"
@@ -83,8 +83,8 @@
           "attributes": {
             "x": "{cx}",
             "y": "{cy} + 6",
-            "fill": "{valueColor}",
-            "fontFamily": "{fontFamily}",
+            "fill": "{value_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "20",
             "textAnchor": "middle",
             "dominantBaseline": "middle"

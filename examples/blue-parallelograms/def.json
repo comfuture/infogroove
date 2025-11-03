@@ -6,14 +6,14 @@
       "width": 1200,
       "height": 420
     },
-    "marginTop": 48,
-    "marginBottom": 48,
-    "marginLeft": 40,
-    "marginRight": 40,
+    "margin_top": 48,
+    "margin_bottom": 48,
+    "margin_left": 40,
+    "margin_right": 40,
     "skew": 28,
-    "fontFamily": "Inter, Arial, sans-serif",
-    "titleColor": "#0f172a",
-    "valueColor": "#1e3a8a",
+    "font_family": "Inter, Arial, sans-serif",
+    "title_color": "#0f172a",
+    "value_color": "#1e3a8a",
     "colors": [
       "#1d4ed8",
       "#2563eb",
@@ -43,32 +43,32 @@
       "let": {
         "title": "entry.title",
         "value": "entry.value",
-        "barWidth": "(canvas.width - marginLeft - marginRight - skew) / max(__total__, 1)",
-        "x": "marginLeft + __index__ * barWidth",
-        "topY": "marginTop",
-        "bottomY": "canvas.height - marginBottom",
-        "colorIndex": "__index__ % colors.length",
-        "fillColor": "colors[colorIndex]",
-        "points": "f'{x},{topY} {x + barWidth},{topY} {x + barWidth + skew},{bottomY} {x + skew},{bottomY}'",
-        "labelX": "x + (barWidth + skew) / 2",
-        "labelY": "topY + 44",
-        "valueY": "labelY + 30"
+        "bar_width": "(canvas.width - margin_left - margin_right - skew) / max(__total__, 1)",
+        "x": "margin_left + __index__ * bar_width",
+        "top_y": "margin_top",
+        "bottom_y": "canvas.height - margin_bottom",
+        "color_index": "__index__ % colors.length",
+        "fill_color": "colors[color_index]",
+        "points": "f'{x},{top_y} {x + bar_width},{top_y} {x + bar_width + skew},{bottom_y} {x + skew},{bottom_y}'",
+        "label_x": "x + (bar_width + skew) / 2",
+        "label_y": "top_y + 44",
+        "value_y": "label_y + 30"
       },
       "children": [
         {
           "type": "polygon",
           "attributes": {
             "points": "{points}",
-            "fill": "{fillColor}"
+            "fill": "{fill_color}"
           }
         },
         {
           "type": "text",
           "attributes": {
-            "x": "{labelX}",
-            "y": "{labelY}",
-            "fill": "{titleColor}",
-            "fontFamily": "{fontFamily}",
+            "x": "{label_x}",
+            "y": "{label_y}",
+            "fill": "{title_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "24",
             "fontWeight": "600",
             "textAnchor": "middle"
@@ -78,10 +78,10 @@
         {
           "type": "text",
           "attributes": {
-            "x": "{labelX}",
-            "y": "{valueY}",
-            "fill": "{valueColor}",
-            "fontFamily": "{fontFamily}",
+            "x": "{label_x}",
+            "y": "{value_y}",
+            "fill": "{value_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "18",
             "textAnchor": "middle"
           },

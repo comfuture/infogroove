@@ -6,17 +6,17 @@
       "width": 960,
       "height": 720
     },
-    "axisX": 480,
-    "marginTop": 80,
-    "rowSpacing": 120,
-    "marginSide": 120,
-    "keywordPadding": 24,
-    "connectorLength": 140,
-    "axisColor": "#cbd5f5",
-    "fontFamily": "Inter, Arial, sans-serif",
-    "keywordColor": "#1f2937",
-    "descriptionColor": "#4b5563",
-    "badgeFill": "#e0f2fe"
+    "axis_x": 480,
+    "margin_top": 80,
+    "row_spacing": 120,
+    "margin_side": 120,
+    "keyword_padding": 24,
+    "connector_length": 140,
+    "axis_color": "#cbd5f5",
+    "font_family": "Inter, Arial, sans-serif",
+    "keyword_color": "#1f2937",
+    "description_color": "#4b5563",
+    "badge_fill": "#e0f2fe"
   },
   "template": [
     {
@@ -32,11 +32,11 @@
     {
       "type": "line",
       "attributes": {
-        "x1": "{axisX}",
+        "x1": "{axis_x}",
         "y1": "0",
-        "x2": "{axisX}",
+        "x2": "{axis_x}",
         "y2": "100%",
-        "stroke": "{axisColor}",
+        "stroke": "{axis_color}",
         "strokeWidth": "4",
         "strokeDasharray": "12 18"
       }
@@ -50,62 +50,62 @@
       "let": {
         "keyword": "entry.keyword",
         "description": "entry.description",
-        "y": "marginTop + __index__ * rowSpacing",
-        "isEven": "__index__ % 2",
-        "keywordX": "marginSide if isEven == 0 else canvas.width - marginSide",
-        "descriptionX": "canvas.width - marginSide if isEven == 0 else marginSide",
-        "keywordAnchor": "'start' if isEven == 0 else 'end'",
-        "descriptionAnchor": "'end' if isEven == 0 else 'start'",
-        "badgeX": "keywordX",
-        "badgeY": "y - 36",
-        "connectorX1": "axisX",
-        "connectorX2": "keywordX - keywordPadding if isEven == 0 else keywordX + keywordPadding"
+        "y": "margin_top + __index__ * row_spacing",
+        "is_even": "__index__ % 2",
+        "keyword_x": "margin_side if is_even == 0 else canvas.width - margin_side",
+        "description_x": "canvas.width - margin_side if is_even == 0 else margin_side",
+        "keyword_anchor": "'start' if is_even == 0 else 'end'",
+        "description_anchor": "'end' if is_even == 0 else 'start'",
+        "badge_x": "keyword_x",
+        "badge_y": "y - 36",
+        "connector_x1": "axis_x",
+        "connector_x2": "keyword_x - keyword_padding if is_even == 0 else keyword_x + keyword_padding"
       },
       "children": [
         {
           "type": "line",
           "attributes": {
-            "x1": "{connectorX1}",
+            "x1": "{connector_x1}",
             "y1": "{y}",
-            "x2": "{connectorX2}",
+            "x2": "{connector_x2}",
             "y2": "{y}",
-            "stroke": "{axisColor}",
+            "stroke": "{axis_color}",
             "strokeWidth": "3"
           }
         },
         {
           "type": "rect",
           "attributes": {
-            "x": "{badgeX} - 60",
-            "y": "{badgeY}",
+            "x": "{badge_x} - 60",
+            "y": "{badge_y}",
             "width": "120",
             "height": "32",
-            "fill": "{badgeFill}",
+            "fill": "{badge_fill}",
             "rx": "16"
           }
         },
         {
           "type": "text",
           "attributes": {
-            "x": "{keywordX}",
+            "x": "{keyword_x}",
             "y": "{y} - 12",
-            "fill": "{keywordColor}",
-            "fontFamily": "{fontFamily}",
+            "fill": "{keyword_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "24",
             "fontWeight": "600",
-            "textAnchor": "{keywordAnchor}"
+            "textAnchor": "{keyword_anchor}"
           },
           "text": "{keyword}"
         },
         {
           "type": "text",
           "attributes": {
-            "x": "{descriptionX}",
+            "x": "{description_x}",
             "y": "{y} + 18",
-            "fill": "{descriptionColor}",
-            "fontFamily": "{fontFamily}",
+            "fill": "{description_color}",
+            "fontFamily": "{font_family}",
             "fontSize": "18",
-            "textAnchor": "{descriptionAnchor}"
+            "textAnchor": "{description_anchor}"
           },
           "text": "{description}"
         }

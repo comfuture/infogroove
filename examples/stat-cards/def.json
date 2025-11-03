@@ -7,16 +7,16 @@
       "height": 600
     },
     "margin": 48,
-    "cardWidth": 280,
-    "cardHeight": 140,
-    "cardGap": 24,
+    "card_width": 280,
+    "card_height": 140,
+    "card_gap": 24,
     "background": "#0f172a",
-    "cardBackground": "#1e293b",
-    "titleColor": "#e2e8f0",
-    "valueColor": "#f8fafc",
-    "deltaColor": "#94a3b8",
-    "fontFamily": "Inter, Arial, sans-serif",
-    "accentColors": [
+    "card_background": "#1e293b",
+    "title_color": "#e2e8f0",
+    "value_color": "#f8fafc",
+    "delta_color": "#94a3b8",
+    "font_family": "Inter, Arial, sans-serif",
+    "accent_colors": [
       "#38bdf8",
       "#34d399",
       "#f97316",
@@ -45,50 +45,50 @@
         "title": "entry.title",
         "value": "entry.value",
         "delta": "entry.delta",
-        "cardsPerRow": "max(1, min(__total__, 3))",
-        "row": "__index__ // cardsPerRow",
-        "column": "__index__ % cardsPerRow",
-        "cardX": "margin + column * (cardWidth + cardGap)",
-        "cardY": "margin + row * (cardHeight + cardGap)",
-        "accentColor": "accentColors[__index__ % accentColors.length]",
-        "titleX": "cardX + 20",
-        "titleY": "cardY + 36",
-        "valueX": "cardX + 20",
-        "valueY": "cardY + 82",
-        "deltaX": "cardX + 20",
-        "deltaY": "cardY + 112"
+        "cards_per_row": "max(1, min(__total__, 3))",
+        "row": "__index__ // cards_per_row",
+        "column": "__index__ % cards_per_row",
+        "card_x": "margin + column * (card_width + card_gap)",
+        "card_y": "margin + row * (card_height + card_gap)",
+        "accent_color": "accent_colors[__index__ % accent_colors.length]",
+        "title_x": "card_x + 20",
+        "title_y": "card_y + 36",
+        "value_x": "card_x + 20",
+        "value_y": "card_y + 82",
+        "delta_x": "card_x + 20",
+        "delta_y": "card_y + 112"
       },
       "children": [
         {
           "type": "rect",
           "attributes": {
-            "x": "{cardX}",
-            "y": "{cardY}",
-            "width": "{cardWidth}",
-            "height": "{cardHeight}",
-            "fill": "{cardBackground}",
+            "x": "{card_x}",
+            "y": "{card_y}",
+            "width": "{card_width}",
+            "height": "{card_height}",
+            "fill": "{card_background}",
             "rx": "20"
           }
         },
         {
           "type": "rect",
           "attributes": {
-            "x": "{cardX}",
-            "y": "{cardY}",
+            "x": "{card_x}",
+            "y": "{card_y}",
             "width": "6",
-            "height": "{cardHeight}",
-            "fill": "{accentColor}",
+            "height": "{card_height}",
+            "fill": "{accent_color}",
             "rx": "6"
           }
         },
         {
           "type": "text",
           "attributes": {
-            "x": "{titleX}",
-            "y": "{titleY}",
-            "fill": "{titleColor}",
+            "x": "{title_x}",
+            "y": "{title_y}",
+            "fill": "{title_color}",
             "fontSize": "18",
-            "fontFamily": "{fontFamily}",
+            "fontFamily": "{font_family}",
             "dominantBaseline": "middle"
           },
           "text": "{title}"
@@ -96,11 +96,11 @@
         {
           "type": "text",
           "attributes": {
-            "x": "{valueX}",
-            "y": "{valueY}",
-            "fill": "{valueColor}",
+            "x": "{value_x}",
+            "y": "{value_y}",
+            "fill": "{value_color}",
             "fontSize": "40",
-            "fontFamily": "{fontFamily}",
+            "fontFamily": "{font_family}",
             "fontWeight": "700",
             "dominantBaseline": "middle"
           },
@@ -109,11 +109,11 @@
         {
           "type": "text",
           "attributes": {
-            "x": "{deltaX}",
-            "y": "{deltaY}",
-            "fill": "{deltaColor}",
+            "x": "{delta_x}",
+            "y": "{delta_y}",
+            "fill": "{delta_color}",
             "fontSize": "16",
-            "fontFamily": "{fontFamily}",
+            "fontFamily": "{font_family}",
             "dominantBaseline": "middle"
           },
           "text": "{delta}"
