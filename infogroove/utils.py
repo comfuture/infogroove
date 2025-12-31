@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import keyword
 import math
 import random
 import re
@@ -258,6 +259,27 @@ def find_dotted_tokens(expression: str) -> list[str]:
     return list(dict.fromkeys(dotted))
 
 
+def find_identifier_tokens(expression: str) -> list[str]:
+    """Return unique identifier tokens used in an expression."""
+
+    names: list[str] = []
+    reader = io.StringIO(expression).readline
+    prev_type: int | None = None
+    prev_string: str | None = None
+    for token in tokenize.generate_tokens(reader):
+        tok_type, tok_string = token.type, token.string
+        if tok_type == tokenize.NAME:
+            if keyword.iskeyword(tok_string):
+                prev_type, prev_string = tok_type, tok_string
+                continue
+            if prev_type == tokenize.OP and prev_string == ".":
+                prev_type, prev_string = tok_type, tok_string
+                continue
+            names.append(tok_string)
+        prev_type, prev_string = tok_type, tok_string
+    return list(dict.fromkeys(names))
+
+
 def replace_tokens(expression: str, replacements: Mapping[str, str]) -> str:
     """Replace many tokens in one pass while preventing partial replacements."""
 
@@ -285,13 +307,18 @@ def prepare_expression_for_sympy(expression: str, context: Mapping[str, Any]) ->
         replacements[token] = placeholder
         sympy_locals[placeholder] = value
     sanitized = replace_tokens(expression, replacements)
-    for key, value in context.items():
-        if isinstance(key, str) and key.isidentifier():
-            sympy_locals.setdefault(key, value)
+    for name in find_identifier_tokens(expression):
+        if not name.isidentifier():
+            continue
+        try:
+            value = context[name]
+        except KeyError:
+            continue
+        sympy_locals.setdefault(name, value)
     return sanitized, sympy_locals
 
 
-def default_eval_locals(context: Mapping[str, Any]) -> dict[str, Any]:
+def default_eval_locals(context: Mapping[str, Any], expression: str | None = None) -> dict[str, Any]:
     """Build a safe evaluation namespace for Python's :func:`eval`."""
 
     safe_locals: dict[str, Any] = {
@@ -323,6 +350,14 @@ def default_eval_locals(context: Mapping[str, Any]) -> dict[str, Any]:
             random=random.random,
         ),
     )
+    if expression:
+        for name in find_identifier_tokens(expression):
+            if name in safe_locals:
+                continue
+            try:
+                safe_locals[name] = context[name]
+            except KeyError:
+                continue
     return safe_locals
 
 
@@ -343,7 +378,7 @@ def fill_placeholders(template: str, context: Mapping[str, Any]) -> str:
 def _evaluate_inline_expression(expression: str, context: Mapping[str, Any]) -> Any:
     """Evaluate an inline placeholder expression within the template context."""
 
-    safe_locals = default_eval_locals(context)
+    safe_locals = default_eval_locals(context, expression=expression)
     try:
         result = eval(expression, {"__builtins__": {}}, safe_locals)
     except Exception as exc:  # pragma: no cover - depends on user expression
