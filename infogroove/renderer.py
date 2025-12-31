@@ -114,22 +114,19 @@ class _OverlayMapping(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         if key in self._resolved:
             return self._resolved[key]
-        if key in self._base:
-            return self._base[key]
         if key in self._bindings:
             return self._resolver(key)
+        if key in self._base:
+            return self._base[key]
         raise KeyError(key)
 
     def __iter__(self) -> Iterator[str]:  # type: ignore[override]
         seen: set[str] = set()
-        for mapping in (self._base, self._resolved):
+        for mapping in (self._resolved, self._bindings, self._base):
             for key in mapping:
                 if key not in seen:
                     seen.add(key)
                     yield key
-        for key in self._bindings:
-            if key not in seen:
-                yield key
 
     def __len__(self) -> int:
         keys = set(self._base) | set(self._resolved) | set(self._bindings)
