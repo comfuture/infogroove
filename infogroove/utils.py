@@ -346,7 +346,8 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
         "float": float,
         "str": str,
     }
-    safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
+    if expression is None:
+        safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
     safe_locals.setdefault("math", math)
     safe_locals.setdefault("random", random)
     safe_locals.setdefault(
@@ -369,7 +370,7 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
             if name in safe_locals:
                 continue
             try:
-                safe_locals[name] = context[name]
+                safe_locals[name] = ensure_accessible(context[name])
             except KeyError:
                 continue
     return safe_locals
