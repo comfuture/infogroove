@@ -56,7 +56,8 @@ aims to keep templates declarative and predictable:
 - **Explicit scopes.** Global `properties` establish shared context, while
   element-level `let` blocks create isolated overlays that run after any repeat
   bindings. Values never bleed across scope boundaries unless you intentionally
-  rebind them.
+  rebind them. When `let` bindings reuse a base key, the `let` binding takes
+  precedence for dependent expressions.
 - **Deterministic evaluation.** Element `let` bindings resolve lazily the first
   time they are referenced. Cycles are detected and reported early, preventing
   runaway recursion and making intent obvious.
