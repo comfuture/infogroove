@@ -73,9 +73,10 @@ models that the renderer consumes.
 }
 ```
 
-Element `let` blocks run after any repeat context has been prepared. The
-bindings they produce become available to the element itself and to any child
-elements.
+Repeat blocks can optionally include a `let` mapping to compute per-iteration
+bindings before the element's own `let` runs. Element `let` blocks run after
+the repeat context (including repeat `let`) has been prepared. The bindings
+they produce become available to the element itself and to any child elements.
 
 ## Programmatic Usage
 
