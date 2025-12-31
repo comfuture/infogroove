@@ -256,7 +256,10 @@ _SAFE_CALLABLE_NAMES = {
 
 
 def _range_list(*args: int) -> list[int]:
-    return list(range(*args))
+    r = range(*args)
+    if len(r) > 10000:
+        raise ValueError("Range size exceeds the maximum limit of 10000")
+    return list(r)
 
 
 class _AstEvaluator:
