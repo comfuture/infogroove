@@ -181,28 +181,12 @@ def resolve_path(context: Mapping[str, Any], path: str) -> Any:
             if token in current:
                 current = current[token]
                 continue
-            snake = to_snake_case(token)
-            camel = to_camel_case(token)
-            for candidate in {snake, camel}:
-                if candidate in current:
-                    current = current[candidate]
-                    break
-            else:
-                raise KeyError(token)
-            continue
+            raise KeyError(token)
         if isinstance(current, Mapping):
             if token in current:
                 current = current[token]
                 continue
-            snake = to_snake_case(token)
-            camel = to_camel_case(token)
-            for candidate in (snake, camel):
-                if candidate in current:
-                    current = current[candidate]
-                    break
-            else:
-                raise KeyError(token)
-            continue
+            raise KeyError(token)
         if isinstance(current, SequenceAdapter):
             if token.isdigit():
                 current = current[int(token)]
@@ -224,6 +208,190 @@ def resolve_path(context: Mapping[str, Any], path: str) -> Any:
         if callable(current) and is_last:
             current = current()
     return current
+
+
+class UnsafeExpressionError(ValueError):
+    """Raised when a template expression includes unsupported syntax."""
+
+
+_SAFE_BINOPS: dict[type[ast.operator], Any] = {
+    ast.Add: lambda a, b: a + b,
+    ast.Sub: lambda a, b: a - b,
+    ast.Mult: lambda a, b: a * b,
+    ast.Div: lambda a, b: a / b,
+    ast.FloorDiv: lambda a, b: a // b,
+    ast.Mod: lambda a, b: a % b,
+    ast.Pow: lambda a, b: a**b,
+}
+
+_SAFE_UNARYOPS: dict[type[ast.unaryop], Any] = {
+    ast.UAdd: lambda a: +a,
+    ast.USub: lambda a: -a,
+    ast.Not: lambda a: not a,
+}
+
+_SAFE_CMP_OPS: dict[type[ast.cmpop], Any] = {
+    ast.Eq: lambda a, b: a == b,
+    ast.NotEq: lambda a, b: a != b,
+    ast.Lt: lambda a, b: a < b,
+    ast.LtE: lambda a, b: a <= b,
+    ast.Gt: lambda a, b: a > b,
+    ast.GtE: lambda a, b: a >= b,
+    ast.Is: lambda a, b: a is b,
+    ast.IsNot: lambda a, b: a is not b,
+    ast.In: lambda a, b: a in b,
+    ast.NotIn: lambda a, b: a not in b,
+}
+
+_SAFE_CALLABLE_NAMES = {"abs", "min", "max", "round", "len", "sum", "int", "float", "str"}
+
+
+class _AstEvaluator:
+    def __init__(
+        self,
+        names: Mapping[str, Any],
+        callable_names: set[str],
+        allowed_attribute_bases: set[Any],
+        allowed_attribute_callables: set[Any],
+    ) -> None:
+        self._names = names
+        self._callable_names = callable_names
+        self._allowed_attribute_bases = allowed_attribute_bases
+        self._allowed_attribute_callables = allowed_attribute_callables
+
+    def evaluate(self, node: ast.AST) -> Any:
+        return self._eval(node)
+
+    def _eval(self, node: ast.AST) -> Any:
+        if isinstance(node, ast.Expression):
+            return self._eval(node.body)
+        if isinstance(node, ast.Constant):
+            return node.value
+        if isinstance(node, ast.Name):
+            if node.id in self._names:
+                return self._names[node.id]
+            raise NameError(node.id)
+        if isinstance(node, ast.BinOp):
+            op = _SAFE_BINOPS.get(type(node.op))
+            if op is None:
+                raise UnsafeExpressionError("Unsupported binary operator")
+            return op(self._eval(node.left), self._eval(node.right))
+        if isinstance(node, ast.UnaryOp):
+            op = _SAFE_UNARYOPS.get(type(node.op))
+            if op is None:
+                raise UnsafeExpressionError("Unsupported unary operator")
+            return op(self._eval(node.operand))
+        if isinstance(node, ast.BoolOp):
+            if isinstance(node.op, ast.And):
+                for value in node.values:
+                    evaluated = self._eval(value)
+                    if not evaluated:
+                        return evaluated
+                return evaluated
+            if isinstance(node.op, ast.Or):
+                for value in node.values:
+                    evaluated = self._eval(value)
+                    if evaluated:
+                        return evaluated
+                return evaluated
+            raise UnsafeExpressionError("Unsupported boolean operator")
+        if isinstance(node, ast.Compare):
+            left = self._eval(node.left)
+            for op, comparator in zip(node.ops, node.comparators, strict=False):
+                handler = _SAFE_CMP_OPS.get(type(op))
+                if handler is None:
+                    raise UnsafeExpressionError("Unsupported comparison operator")
+                right = self._eval(comparator)
+                if not handler(left, right):
+                    return False
+                left = right
+            return True
+        if isinstance(node, ast.IfExp):
+            return self._eval(node.body) if self._eval(node.test) else self._eval(node.orelse)
+        if isinstance(node, ast.Attribute):
+            value = self._eval(node.value)
+            if node.attr.startswith("_"):
+                raise UnsafeExpressionError("Access to private attributes is not allowed")
+            try:
+                return getattr(value, node.attr)
+            except AttributeError as exc:
+                raise UnsafeExpressionError(f"Unknown attribute '{node.attr}'") from exc
+        if isinstance(node, ast.Subscript):
+            value = self._eval(node.value)
+            if isinstance(node.slice, ast.Slice):
+                lower = self._eval(node.slice.lower) if node.slice.lower else None
+                upper = self._eval(node.slice.upper) if node.slice.upper else None
+                step = self._eval(node.slice.step) if node.slice.step else None
+                return value[slice(lower, upper, step)]
+            index = self._eval(node.slice)
+            return value[index]
+        if isinstance(node, ast.Call):
+            func = node.func
+            args = [self._eval(arg) for arg in node.args]
+            kwargs = {kw.arg: self._eval(kw.value) for kw in node.keywords}
+            if isinstance(func, ast.Name):
+                if func.id not in self._callable_names:
+                    raise UnsafeExpressionError(f"Calling '{func.id}' is not allowed")
+                target = self._names[func.id]
+            elif isinstance(func, ast.Attribute):
+                base = self._eval(func.value)
+                if base not in self._allowed_attribute_bases:
+                    raise UnsafeExpressionError("Calling attributes on this object is not allowed")
+                if func.attr.startswith("_"):
+                    raise UnsafeExpressionError("Access to private attributes is not allowed")
+                target = getattr(base, func.attr)
+                if target not in self._allowed_attribute_callables:
+                    raise UnsafeExpressionError(f"Calling '{func.attr}' is not allowed")
+            else:
+                raise UnsafeExpressionError("Unsupported call target")
+            if not callable(target):
+                raise UnsafeExpressionError("Call target is not callable")
+            return target(*args, **kwargs)
+        if isinstance(node, ast.List):
+            return [self._eval(item) for item in node.elts]
+        if isinstance(node, ast.Tuple):
+            return tuple(self._eval(item) for item in node.elts)
+        if isinstance(node, ast.Dict):
+            return {self._eval(key): self._eval(value) for key, value in zip(node.keys, node.values, strict=False)}
+        if isinstance(node, ast.Set):
+            return {self._eval(item) for item in node.elts}
+        if isinstance(node, ast.JoinedStr):
+            raise UnsafeExpressionError("f-strings are not supported")
+        raise UnsafeExpressionError(f"Unsupported expression node: {type(node).__name__}")
+
+
+def safe_ast_eval(expression: str, context: Mapping[str, Any]) -> Any:
+    """Evaluate a Python-like expression using a restricted AST evaluator."""
+
+    try:
+        tree = ast.parse(expression, mode="eval")
+    except SyntaxError as exc:
+        raise UnsafeExpressionError("Invalid expression syntax") from exc
+
+    safe_locals = default_eval_locals(context, expression=expression)
+    callable_names = {
+        name for name in _SAFE_CALLABLE_NAMES if name in safe_locals and callable(safe_locals[name])
+    }
+    allowed_attribute_bases = {
+        base
+        for base in (safe_locals.get("math"), safe_locals.get("random"), safe_locals.get("Math"))
+        if base is not None
+    }
+    allowed_attribute_callables: set[Any] = set()
+    for base in allowed_attribute_bases:
+        for attr in dir(base):
+            if attr.startswith("_"):
+                continue
+            value = getattr(base, attr)
+            if callable(value):
+                allowed_attribute_callables.add(value)
+    evaluator = _AstEvaluator(
+        safe_locals,
+        callable_names,
+        allowed_attribute_bases,
+        allowed_attribute_callables,
+    )
+    return evaluator.evaluate(tree)
 
 
 def to_snake_case(text: str) -> str:
@@ -381,26 +549,19 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
     return safe_locals
 
 
-def fill_placeholders(template: str, context: Mapping[str, Any]) -> str:
+def fill_placeholders(
+    template: str,
+    context: Mapping[str, Any],
+    *,
+    label: str | None = None,
+) -> str:
     """Inject context values into ``{placeholder}`` slots within a template string."""
 
     def _replacement(match: re.Match[str]) -> str:
         token = match.group(1).strip()
-        try:
-            value = resolve_path(context, token)
-        except KeyError:
-            value = _evaluate_inline_expression(token, context)
+        from .formula import evaluate_expression
+
+        value = evaluate_expression(token, context, label=label)
         return "" if value is None else stringify(value)
 
     return PLACEHOLDER_PATTERN.sub(_replacement, template)
-
-
-def _evaluate_inline_expression(expression: str, context: Mapping[str, Any]) -> Any:
-    """Evaluate an inline placeholder expression within the template context."""
-
-    safe_locals = default_eval_locals(context, expression=expression)
-    try:
-        result = eval(expression, {"__builtins__": {}}, safe_locals)
-    except Exception as exc:  # pragma: no cover - depends on user expression
-        raise KeyError(expression) from exc
-    return _unwrap_accessible(result)

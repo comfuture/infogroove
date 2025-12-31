@@ -30,8 +30,8 @@ from svg import (
     Text,
 )
 
-from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
-from .formula import FormulaEngine
+from .exceptions import DataValidationError, RenderError
+from .formula import evaluate_expression
 from .models import ElementSpec, RepeatSpec, TemplateSpec
 from .utils import (
     MappingAdapter,
@@ -240,8 +240,8 @@ class InfogrooveRenderer:
 
     def _translate_from_context(self, base_context: Mapping[str, Any]) -> list[NodeSpec]:
         nodes: list[NodeSpec] = []
-        for element in self._template.template:
-            nodes.extend(self._render_to_nodes(element, base_context))
+        for index, element in enumerate(self._template.template):
+            nodes.extend(self._render_to_nodes(element, base_context, path=f"template[{index}]"))
         return nodes
 
     def _resolve_canvas_dimensions(self, context: Mapping[str, Any]) -> tuple[float, float]:
@@ -263,29 +263,55 @@ class InfogrooveRenderer:
         context: Mapping[str, Any],
         *,
         ignore_repeat: bool = False,
+        path: str,
     ) -> list[NodeSpec]:
         if element.repeat and not ignore_repeat:
             items, total = self._resolve_repeat_items(element.repeat, context)
             rendered: list[NodeSpec] = []
             for index, item in enumerate(items):
                 frame = self._build_repeat_context(context, element.repeat, item, index, total)
-                rendered.extend(self._render_to_nodes(element, frame, ignore_repeat=True))
+                repeat_path = f"{path}[{index}]"
+                rendered.extend(
+                    self._render_to_nodes(element, frame, ignore_repeat=True, path=repeat_path)
+                )
             return rendered
 
         working_context = dict(context)
         if element.let:
-            bindings = self._evaluate_bindings(element.let, working_context, label=f"element:{element.type}")
+            bindings = self._evaluate_bindings(
+                element.let,
+                working_context,
+                label=f"{path} ({element.type})",
+            )
             accessible = self._make_accessible_bindings(bindings)
             working_context.update(accessible)
         child_nodes: list[NodeSpec] = []
-        for child in element.children:
-            child_nodes.extend(self._render_to_nodes(child, working_context))
+        for child_index, child in enumerate(element.children):
+            child_nodes.extend(
+                self._render_to_nodes(
+                    child,
+                    working_context,
+                    path=f"{path}.children[{child_index}]",
+                )
+            )
 
         prepared_attributes = {
-            key: fill_placeholders(value, working_context)
+            key: fill_placeholders(
+                value,
+                working_context,
+                label=f"{path} ({element.type}) attribute '{key}'",
+            )
             for key, value in element.attributes.items()
         }
-        text_value = fill_placeholders(element.text, working_context) if element.text is not None else None
+        text_value = (
+            fill_placeholders(
+                element.text,
+                working_context,
+                label=f"{path} ({element.type}) text",
+            )
+            if element.text is not None
+            else None
+        )
 
         renderer = self._renderers.get(element.type.lower())
         if renderer is None:
@@ -664,6 +690,7 @@ class InfogrooveRenderer:
                     base_context,
                     resolved,
                     bindings,
+                    label=label,
                 )
             finally:
                 resolving.remove(name)
@@ -683,6 +710,8 @@ class InfogrooveRenderer:
         base_context: Mapping[str, Any],
         resolved: Mapping[str, Any],
         bindings: Mapping[str, Any],
+        *,
+        label: str,
     ) -> Any:
         if isinstance(value, Mapping):
             return {
@@ -693,6 +722,7 @@ class InfogrooveRenderer:
                     base_context,
                     resolved,
                     bindings,
+                    label=label,
                 )
                 for key, sub_value in value.items()
             }
@@ -706,40 +736,21 @@ class InfogrooveRenderer:
                     base_context,
                     resolved,
                     bindings,
+                    label=label,
                 )
                 for index, item in enumerate(value)
             ]
 
         if isinstance(value, str):
+            scope = _FormulaScope(overlay, base_context, resolved, bindings, name)
+            error_label = f"{label} let '{name}'"
             if PLACEHOLDER_PATTERN.search(value):
                 match = PLACEHOLDER_PATTERN.fullmatch(value.strip())
                 if match:
                     token = match.group(1).strip()
-                    try:
-                        return resolve_path(overlay, token)
-                    except KeyError:
-                        engine = FormulaEngine({name: token})
-                        scope = _FormulaScope(overlay, base_context, resolved, bindings, name)
-                        try:
-                            return engine.evaluate(scope)[name]
-                        except FormulaEvaluationError:
-                            return value
-                try:
-                    return fill_placeholders(value, overlay)
-                except KeyError:
-                    return value
-            try:
-                resolved_value = resolve_path(overlay, value)
-                return resolved_value
-            except KeyError:
-                pass
-            engine = FormulaEngine({name: value})
-            scope = _FormulaScope(overlay, base_context, resolved, bindings, name)
-            try:
-                evaluated = engine.evaluate(scope)[name]
-            except FormulaEvaluationError:
-                return value
-            return evaluated
+                    return evaluate_expression(token, scope, label=error_label)
+                return fill_placeholders(value, scope, label=error_label)
+            return evaluate_expression(value, scope, label=error_label)
 
         return value
 
