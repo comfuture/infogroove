@@ -123,6 +123,10 @@ data fields, derived metrics, and loop-scoped bindings).
 Identifiers are resolved exactly as written. Prefer a consistent casing
 convention within datasets and templates to avoid ambiguity.
 
+Randomness is opt-in. To enable random values, provide `random_seed` (or a
+custom RNG) under `properties`; expressions can then call `Math.random()` or
+`random.random()` for deterministic sequences.
+
 ## CLI Options
 
 ```
