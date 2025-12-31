@@ -138,6 +138,11 @@ def test_random_seed_provides_deterministic_sequence():
 
     first = float(fill_placeholders("{Math.random()}", context))
     second = float(fill_placeholders("{Math.random()}", context))
+    assert first != second
+
+    new_context = {"properties": {"random_seed": 7}}
+    first_from_new = float(fill_placeholders("{Math.random()}", new_context))
+    assert first == first_from_new
 
     rng = random.Random(7)
     assert first == rng.random()
