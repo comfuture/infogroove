@@ -44,7 +44,7 @@ class FormulaEngine:
             sympy_error = exc
 
         try:
-            safe_locals = default_eval_locals(context)
+            safe_locals = default_eval_locals(context, expression=expression)
             raw_result = eval(expression, {"__builtins__": {}}, safe_locals)
             return _unwrap_accessible(raw_result)
         except Exception as python_exc:

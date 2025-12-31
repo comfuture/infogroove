@@ -223,6 +223,31 @@ def test_repeat_alias_reserved_helpers_progress(sample_template):
     assert second_alias["__last__"] is True
 
 
+def test_let_bindings_allow_forward_references(tmp_path):
+    template = TemplateSpec(
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=100, height=100),
+        template=[
+            ElementSpec(
+                type="polygon",
+                attributes={"points": "{points}"},
+                let={
+                    "points": "f'{x},{top_y} {x + width},{top_y}'",
+                    "x": "10",
+                    "top_y": "20",
+                    "width": "30",
+                },
+            )
+        ],
+        properties={"canvas": {"width": 100, "height": 100}},
+    )
+
+    renderer = InfogrooveRenderer(template)
+    node_specs = renderer.translate({})
+
+    assert node_specs[0]["attributes"]["points"] == "10,20 40,20"
+
+
 def test_validate_data_enforces_object_schema(sample_template):
     renderer = InfogrooveRenderer(sample_template)
 
