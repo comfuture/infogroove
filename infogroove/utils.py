@@ -541,22 +541,23 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
     if expression is None:
         safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
     safe_locals.setdefault("math", math)
-    safe_locals.setdefault("random", random)
-    safe_locals.setdefault(
-        "Math",
-        SimpleNamespace(
-            floor=math.floor,
-            ceil=math.ceil,
-            sin=math.sin,
-            cos=math.cos,
-            tan=math.tan,
-            sqrt=math.sqrt,
-            pow=math.pow,
-            pi=math.pi,
-            tau=math.tau,
-            random=random.random,
-        ),
-    )
+    random_source = _resolve_random_source(context)
+    if random_source is not None:
+        safe_locals.setdefault("random", random_source)
+    math_namespace: dict[str, Any] = {
+        "floor": math.floor,
+        "ceil": math.ceil,
+        "sin": math.sin,
+        "cos": math.cos,
+        "tan": math.tan,
+        "sqrt": math.sqrt,
+        "pow": math.pow,
+        "pi": math.pi,
+        "tau": math.tau,
+    }
+    if random_source is not None:
+        math_namespace["random"] = random_source.random
+    safe_locals.setdefault("Math", SimpleNamespace(**math_namespace))
     if expression:
         for name in find_identifier_tokens(expression):
             try:
@@ -564,6 +565,43 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
             except KeyError:
                 continue
     return safe_locals
+
+
+def _is_random_source(value: Any) -> bool:
+    random_attr = getattr(value, "random", None)
+    return callable(random_attr)
+
+
+def _seeded_random(context: Mapping[str, Any], seed: Any) -> Any:
+    if isinstance(context, MutableMapping):
+        existing = context.get("__random__")
+        if _is_random_source(existing):
+            return existing
+        rng = random.Random(seed)
+        context["__random__"] = rng
+        return rng
+    return random.Random(seed)
+
+
+def _resolve_random_source(context: Mapping[str, Any]) -> Any | None:
+    if not isinstance(context, Mapping):
+        return None
+    existing = context.get("__random__")
+    if _is_random_source(existing):
+        return existing
+    properties = context.get("properties") or context.get("variables")
+    if isinstance(properties, Mapping):
+        candidate = properties.get("random")
+        if _is_random_source(candidate):
+            return candidate
+        if "random_seed" in properties:
+            return _seeded_random(context, properties["random_seed"])
+    candidate = context.get("random")
+    if _is_random_source(candidate):
+        return candidate
+    if "random_seed" in context:
+        return _seeded_random(context, context["random_seed"])
+    return None
 
 
 def fill_placeholders(
