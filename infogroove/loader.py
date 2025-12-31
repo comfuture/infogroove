@@ -159,10 +159,17 @@ def _parse_element(entry: Any) -> ElementSpec:
             raise TemplateError("Repeat bindings require a string 'as' alias")
         if "index" in repeat_block:
             raise TemplateError("Repeat 'index' is no longer supported; use __index__ helper variables")
-        extra_keys = {key for key in repeat_block if key not in {"items", "as"}}
+        repeat_let = repeat_block.get("let", {})
+        if repeat_let is None:
+            repeat_let = {}
+        if not isinstance(repeat_let, Mapping):
+            raise TemplateError("Repeat 'let' bindings must be declared as a mapping when provided")
+        extra_keys = {key for key in repeat_block if key not in {"items", "as", "let"}}
         if extra_keys:
-            raise TemplateError("Repeat declarations only accept 'items' and 'as'; move derived values under the element 'let' block")
-        repeat = RepeatSpec(items=items, alias=alias)
+            raise TemplateError(
+                "Repeat declarations only accept 'items', 'as', and 'let'; move derived values under the element 'let' block"
+            )
+        repeat = RepeatSpec(items=items, alias=alias, let=dict(repeat_let))
 
     let_block = entry.get("let", {})
     if let_block is None:
