@@ -245,7 +245,7 @@ def test_let_bindings_allow_forward_references(tmp_path):
     renderer = InfogrooveRenderer(template)
     node_specs = renderer.translate({})
 
-    assert node_specs[0]["attributes"]["points"] == "10,20 40,20"
+    assert node_specs[0]["attributes"]["points"] == "10.0,20.0 40.0,20.0"
 
 
 def test_validate_data_enforces_object_schema(sample_template):

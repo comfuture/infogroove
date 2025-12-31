@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import keyword
 import math
@@ -261,6 +262,19 @@ def find_dotted_tokens(expression: str) -> list[str]:
 
 def find_identifier_tokens(expression: str) -> list[str]:
     """Return unique identifier tokens used in an expression."""
+
+    try:
+        parsed = ast.parse(expression, mode="eval")
+    except SyntaxError:
+        parsed = None
+
+    if parsed is not None:
+        names = [
+            node.id
+            for node in ast.walk(parsed)
+            if isinstance(node, ast.Name) and not keyword.iskeyword(node.id)
+        ]
+        return list(dict.fromkeys(names))
 
     names: list[str] = []
     reader = io.StringIO(expression).readline

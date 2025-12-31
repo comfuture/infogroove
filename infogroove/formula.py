@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import ChainMap
 from typing import Any, Mapping
 
 import sympy
@@ -22,7 +23,7 @@ class FormulaEngine:
 
         results: dict[str, Any] = {}
         for name, expression in self._formulas.items():
-            scope = {**context, **results}
+            scope = ChainMap(results, context)
             results[name] = self._evaluate_single(name, expression, scope)
         return results
 
