@@ -119,9 +119,8 @@ expressions such as `{__index__ * 10}` or `{canvas.width / 2}`. Expressions are
 evaluated inside the same safe context as loop bindings (global properties,
 data fields, derived metrics, and loop-scoped bindings).
 
-Mixed casing identifiers (e.g. `{items[0].myValue}`) are resolved by
-normalising to snake/camel case automatically, but adopting snake_case within
-your own datasets keeps templates more predictable.
+Identifiers are resolved exactly as written. Prefer a consistent casing
+convention within datasets and templates to avoid ambiguity.
 
 ## CLI Options
 
