@@ -185,6 +185,29 @@ def test_repeat_let_override_is_scoped(tmp_path):
     assert base_context["properties"].color == "red"
 
 
+def test_let_binding_overrides_base_for_dependencies(tmp_path):
+    template = TemplateSpec(
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=100, height=100),
+        template=[
+            ElementSpec(
+                type="rect",
+                attributes={"x": "{x}", "width": "10", "height": "10"},
+                let={
+                    "gap": "12",
+                    "x": "gap * 2",
+                },
+            )
+        ],
+        properties={"canvas": {"width": 100, "height": 100}, "gap": 24},
+    )
+
+    renderer = InfogrooveRenderer(template)
+    node_specs = renderer.translate({})
+
+    assert node_specs[0]["attributes"]["x"] == "24"
+
+
 def test_repeat_alias_reserved_helpers_progress(sample_template):
     renderer = InfogrooveRenderer(sample_template)
     base_context = renderer._build_base_context(
