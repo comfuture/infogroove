@@ -118,7 +118,7 @@
         {
           "type": "rect",
           "attributes": {
-            "x": "{badge_x} - 60",
+            "x": "{badge_x - 60}",
             "y": "{badge_y}",
             "width": "120",
             "height": "32",
@@ -130,7 +130,7 @@
           "type": "text",
           "attributes": {
             "x": "{keyword_x}",
-            "y": "{y} - 12",
+            "y": "{y - 12}",
             "fill": "{keyword_color}",
             "fontFamily": "{font_family}",
             "fontSize": "24",
@@ -143,7 +143,7 @@
           "type": "text",
           "attributes": {
             "x": "{description_x}",
-            "y": "{y} + 18",
+            "y": "{y + 18}",
             "fill": "{description_color}",
             "fontFamily": "{font_family}",
             "fontSize": "18",

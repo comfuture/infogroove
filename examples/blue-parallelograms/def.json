@@ -115,7 +115,7 @@
         "bottom_y": "canvas.height - margin_bottom",
         "color_index": "__index__ % colors.length",
         "fill_color": "colors[color_index]",
-        "points": "f'{x},{top_y} {x + bar_width},{top_y} {x + bar_width + skew},{bottom_y} {x + skew},{bottom_y}'",
+        "points": "{x},{top_y} {x + bar_width},{top_y} {x + bar_width + skew},{bottom_y} {x + skew},{bottom_y}",
         "label_x": "x + (bar_width + skew) / 2",
         "label_y": "top_y + 44",
         "value_y": "label_y + 30"
