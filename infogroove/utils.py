@@ -205,8 +205,6 @@ def resolve_path(context: Mapping[str, Any], path: str) -> Any:
             current = getattr(current, token)
         except AttributeError as exc:  # pragma: no cover - defensive fallback
             raise KeyError(token) from exc
-        if callable(current) and is_last:
-            current = current()
     return current
 
 
@@ -243,7 +241,22 @@ _SAFE_CMP_OPS: dict[type[ast.cmpop], Any] = {
     ast.NotIn: lambda a, b: a not in b,
 }
 
-_SAFE_CALLABLE_NAMES = {"abs", "min", "max", "round", "len", "sum", "int", "float", "str"}
+_SAFE_CALLABLE_NAMES = {
+    "abs",
+    "min",
+    "max",
+    "round",
+    "len",
+    "sum",
+    "int",
+    "float",
+    "str",
+    "range",
+}
+
+
+def _range_list(*args: int) -> list[int]:
+    return list(range(*args))
 
 
 class _AstEvaluator:
@@ -520,6 +533,7 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
         "int": int,
         "float": float,
         "str": str,
+        "range": _range_list,
     }
     if expression is None:
         safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
