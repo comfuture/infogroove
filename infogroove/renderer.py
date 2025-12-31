@@ -33,7 +33,15 @@ from svg import (
 from .exceptions import DataValidationError, FormulaEvaluationError, RenderError
 from .formula import FormulaEngine
 from .models import ElementSpec, RepeatSpec, TemplateSpec
-from .utils import MappingAdapter, ensure_accessible, fill_placeholders, resolve_path, stringify, to_snake_case
+from .utils import (
+    MappingAdapter,
+    PLACEHOLDER_PATTERN,
+    ensure_accessible,
+    fill_placeholders,
+    resolve_path,
+    stringify,
+    to_snake_case,
+)
 
 NodeSpec = dict[str, Any]
 
@@ -703,6 +711,23 @@ class InfogrooveRenderer:
             ]
 
         if isinstance(value, str):
+            if PLACEHOLDER_PATTERN.search(value):
+                match = PLACEHOLDER_PATTERN.fullmatch(value.strip())
+                if match:
+                    token = match.group(1).strip()
+                    try:
+                        return resolve_path(overlay, token)
+                    except KeyError:
+                        engine = FormulaEngine({name: token})
+                        scope = _FormulaScope(overlay, base_context, resolved, bindings, name)
+                        try:
+                            return engine.evaluate(scope)[name]
+                        except FormulaEvaluationError:
+                            return value
+                try:
+                    return fill_placeholders(value, overlay)
+                except KeyError:
+                    return value
             try:
                 resolved_value = resolve_path(overlay, value)
                 return resolved_value

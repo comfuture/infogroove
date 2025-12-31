@@ -232,7 +232,7 @@ def test_let_bindings_allow_forward_references(tmp_path):
                 type="polygon",
                 attributes={"points": "{points}"},
                 let={
-                    "points": "f'{x},{top_y} {x + width},{top_y}'",
+                    "points": "{x},{top_y} {x + width},{top_y}",
                     "x": "10",
                     "top_y": "20",
                     "width": "30",
