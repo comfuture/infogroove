@@ -121,7 +121,7 @@
           "type": "text",
           "attributes": {
             "x": "{cx}",
-            "y": "{cy} + 6",
+            "y": "{cy + 6}",
             "fill": "{value_color}",
             "fontFamily": "{font_family}",
             "fontSize": "20",

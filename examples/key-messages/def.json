@@ -167,7 +167,7 @@
         "card_title_x": "card_x + 28",
         "card_title_y": "card_y + 82",
         "card_subtitle_y": "card_y + 132",
-        "subtitle_clip_id": "f'keyMsgClip_{__index__}'",
+        "subtitle_clip_id": "keyMsgClip_{__index__}",
         "subtitle_clip_x": "lead_title_x if __first__ else card_title_x",
         "subtitle_clip_y": "lead_subtitle_y - 4 if __first__ else card_subtitle_y - 4",
         "subtitle_clip_width": "(lead_width - 88) if __first__ else max(card_width - 56, 0)",
