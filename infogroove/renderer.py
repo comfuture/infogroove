@@ -155,6 +155,8 @@ class _FormulaScope(Mapping[str, Any]):
 
     def __getitem__(self, key: str) -> Any:
         if key == self._skip:
+            if key in self._base:
+                return self._base[key]
             raise KeyError(key)
         return self._overlay[key]
 
@@ -176,7 +178,7 @@ class _FormulaScope(Mapping[str, Any]):
         if not isinstance(key, str):  # pragma: no cover - defensive
             return False
         if key == self._skip:
-            return False
+            return key in self._base
         if key in self._resolved or key in self._base:
             return True
         return key in self._bindings
