@@ -263,18 +263,24 @@ def find_dotted_tokens(expression: str) -> list[str]:
 def find_identifier_tokens(expression: str) -> list[str]:
     """Return unique identifier tokens used in an expression."""
 
+    def _ast_identifiers(source: str) -> list[str]:
+        try:
+            parsed = ast.parse(source, mode="eval")
+        except SyntaxError:
+            return []
+        return [
+            node.id
+            for node in ast.walk(parsed)
+            if isinstance(node, ast.Name) and not keyword.iskeyword(node.id)
+        ]
+
     try:
         parsed = ast.parse(expression, mode="eval")
     except SyntaxError:
         parsed = None
 
     if parsed is not None:
-        names = [
-            node.id
-            for node in ast.walk(parsed)
-            if isinstance(node, ast.Name) and not keyword.iskeyword(node.id)
-        ]
-        return list(dict.fromkeys(names))
+        return list(dict.fromkeys(_ast_identifiers(expression)))
 
     names: list[str] = []
     reader = io.StringIO(expression).readline
@@ -282,14 +288,15 @@ def find_identifier_tokens(expression: str) -> list[str]:
     prev_string: str | None = None
     for token in tokenize.generate_tokens(reader):
         tok_type, tok_string = token.type, token.string
+        if tok_type == tokenize.STRING:
+            prefix = tok_string.split("\"", 1)[0].split("'", 1)[0]
+            if "f" in prefix.lower():
+                names.extend(_ast_identifiers(tok_string))
         if tok_type == tokenize.NAME:
-            if keyword.iskeyword(tok_string):
-                prev_type, prev_string = tok_type, tok_string
-                continue
-            if prev_type == tokenize.OP and prev_string == ".":
-                prev_type, prev_string = tok_type, tok_string
-                continue
-            names.append(tok_string)
+            if not keyword.iskeyword(tok_string) and not (
+                prev_type == tokenize.OP and prev_string == "."
+            ):
+                names.append(tok_string)
         prev_type, prev_string = tok_type, tok_string
     return list(dict.fromkeys(names))
 
@@ -367,8 +374,6 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
     )
     if expression:
         for name in find_identifier_tokens(expression):
-            if name in safe_locals:
-                continue
             try:
                 safe_locals[name] = ensure_accessible(context[name])
             except KeyError:
