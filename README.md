@@ -91,7 +91,10 @@ The `repeat` block explicitly controls iteration:
   "type": "text",
   "repeat": {
     "items": "items",
-    "as": "row"
+    "as": "row",
+    "let": {
+      "row_x": "__index__ * 24"
+    }
   },
   "let": {
     "label": "row.label",
@@ -108,6 +111,8 @@ The `repeat` block explicitly controls iteration:
   `__count__`) inside expressions when you need positional data; when the
   iterated item is a mapping, those helpers are also exposed on the alias (for
   example, `row.__index__`).
+- `let` inside `repeat` defines per-iteration bindings evaluated before the
+  element's own `let` block, allowing shared loop-derived values to be reused.
 - Element `let` injects per-iteration bindings scoped to that element.
   Expressions can reference the current item, previously declared loop
   bindings, and globals.
