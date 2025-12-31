@@ -589,7 +589,7 @@ def _resolve_random_source(context: Mapping[str, Any]) -> Any | None:
     existing = context.get("__random__")
     if _is_random_source(existing):
         return existing
-    properties = context.get("properties") or context.get("variables")
+    properties = context.get("properties") if "properties" in context else context.get("variables")
     if isinstance(properties, Mapping):
         candidate = properties.get("random")
         if _is_random_source(candidate):
