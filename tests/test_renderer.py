@@ -246,6 +246,34 @@ def test_repeat_alias_reserved_helpers_progress(sample_template):
     assert second_alias["__last__"] is True
 
 
+def test_repeat_let_bindings_are_available(tmp_path):
+    template = TemplateSpec(
+        source_path=tmp_path / "def.json",
+        canvas=CanvasSpec(width=100, height=40),
+        template=[
+            ElementSpec(
+                type="text",
+                attributes={"x": "{offset}", "y": "10"},
+                text="{label}",
+                repeat=RepeatSpec(
+                    items="data",
+                    alias="row",
+                    let={"offset": "__index__ * 10", "label": "row.label"},
+                ),
+            )
+        ],
+        properties={"canvas": {"width": 100, "height": 40}},
+    )
+
+    renderer = InfogrooveRenderer(template)
+    node_specs = renderer.translate([{"label": "A"}, {"label": "B"}])
+
+    assert node_specs[0]["attributes"]["x"] == "0"
+    assert node_specs[0]["text"] == "A"
+    assert node_specs[1]["attributes"]["x"] == "10"
+    assert node_specs[1]["text"] == "B"
+
+
 def test_let_bindings_allow_forward_references(tmp_path):
     template = TemplateSpec(
         source_path=tmp_path / "def.json",
