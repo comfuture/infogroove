@@ -102,3 +102,26 @@ def test_fill_placeholders_evaluates_inline_expressions():
 
     with pytest.raises(FormulaEvaluationError):
         fill_placeholders("{missing + 1}", context)
+
+
+def test_resolve_path_does_not_invoke_callables():
+    calls: list[str] = []
+
+    def marker():
+        calls.append("called")
+        return "value"
+
+    context = {"value": marker}
+
+    resolved = resolve_path(context, "value")
+
+    assert resolved is marker
+    assert calls == []
+
+
+def test_fill_placeholders_supports_range_lists():
+    context: dict[str, object] = {}
+
+    assert fill_placeholders("{range(3)}", context) == "[0, 1, 2]"
+    assert fill_placeholders("{range(1, 4)}", context) == "[1, 2, 3]"
+    assert fill_placeholders("{range(1, 5, 2)}", context) == "[1, 3]"
