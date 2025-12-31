@@ -251,7 +251,7 @@ class _AstEvaluator:
         self,
         names: Mapping[str, Any],
         callable_names: set[str],
-        allowed_attribute_bases: set[Any],
+        allowed_attribute_bases: tuple[Any, ...],
         allowed_attribute_callables: set[Any],
     ) -> None:
         self._names = names
@@ -335,7 +335,7 @@ class _AstEvaluator:
                 target = self._names[func.id]
             elif isinstance(func, ast.Attribute):
                 base = self._eval(func.value)
-                if base not in self._allowed_attribute_bases:
+                if not any(base is candidate for candidate in self._allowed_attribute_bases):
                     raise UnsafeExpressionError("Calling attributes on this object is not allowed")
                 if func.attr.startswith("_"):
                     raise UnsafeExpressionError("Access to private attributes is not allowed")
@@ -372,11 +372,11 @@ def safe_ast_eval(expression: str, context: Mapping[str, Any]) -> Any:
     callable_names = {
         name for name in _SAFE_CALLABLE_NAMES if name in safe_locals and callable(safe_locals[name])
     }
-    allowed_attribute_bases = {
+    allowed_attribute_bases = tuple(
         base
         for base in (safe_locals.get("math"), safe_locals.get("random"), safe_locals.get("Math"))
         if base is not None
-    }
+    )
     allowed_attribute_callables: set[Any] = set()
     for base in allowed_attribute_bases:
         for attr in dir(base):
