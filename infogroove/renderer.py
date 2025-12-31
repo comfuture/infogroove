@@ -270,6 +270,13 @@ class InfogrooveRenderer:
             for index, item in enumerate(items):
                 frame = self._build_repeat_context(context, element.repeat, item, index, total)
                 repeat_path = f"{path}[{index}]"
+                if element.repeat.let:
+                    repeat_bindings = self._evaluate_bindings(
+                        element.repeat.let,
+                        frame,
+                        label=f"{repeat_path} ({element.type}) repeat",
+                    )
+                    frame.update(self._make_accessible_bindings(repeat_bindings))
                 rendered.extend(
                     self._render_to_nodes(element, frame, ignore_repeat=True, path=repeat_path)
                 )
