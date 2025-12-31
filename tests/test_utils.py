@@ -1,4 +1,5 @@
 import math
+import random
 
 import pytest
 
@@ -125,3 +126,19 @@ def test_fill_placeholders_supports_range_lists():
     assert fill_placeholders("{range(3)}", context) == "[0, 1, 2]"
     assert fill_placeholders("{range(1, 4)}", context) == "[1, 2, 3]"
     assert fill_placeholders("{range(1, 5, 2)}", context) == "[1, 3]"
+
+
+def test_random_is_opt_in():
+    with pytest.raises(FormulaEvaluationError):
+        fill_placeholders("{Math.random()}", {})
+
+
+def test_random_seed_provides_deterministic_sequence():
+    context = {"properties": {"random_seed": 7}}
+
+    first = float(fill_placeholders("{Math.random()}", context))
+    second = float(fill_placeholders("{Math.random()}", context))
+
+    rng = random.Random(7)
+    assert first == rng.random()
+    assert second == rng.random()
