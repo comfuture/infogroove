@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from infogroove.exceptions import FormulaEvaluationError
 from infogroove.utils import (
     MappingAdapter,
     PLACEHOLDER_PATTERN,
@@ -82,7 +83,7 @@ def test_fill_placeholders_inserts_context_values():
     rendered = fill_placeholders(template, context)
     assert rendered == "Value=5 Label=Five"
 
-    with pytest.raises(KeyError):
+    with pytest.raises(FormulaEvaluationError):
         fill_placeholders("{missing.value}", context)
 
 
@@ -97,7 +98,7 @@ def test_fill_placeholders_evaluates_inline_expressions():
         context,
     )
 
-    assert rendered == "Double=14 Next=3 Half=40.0"
+    assert rendered == "Double=14 Next=3 Half=40"
 
-    with pytest.raises(KeyError):
+    with pytest.raises(FormulaEvaluationError):
         fill_placeholders("{missing + 1}", context)

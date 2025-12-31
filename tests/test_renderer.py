@@ -86,7 +86,7 @@ def test_translate_returns_node_specs(sample_template):
 
     assert [node["type"] for node in node_specs] == ["rect", "text"]
     assert all("children" in node for node in node_specs)
-    assert node_specs[1]["text"] == "Only: 18.0"
+    assert node_specs[1]["text"] == "Only: 18"
     # Ensure JSON roundtrip compatibility
     assert json.loads(json.dumps(node_specs, ensure_ascii=False)) == node_specs
 
@@ -245,7 +245,7 @@ def test_let_bindings_allow_forward_references(tmp_path):
     renderer = InfogrooveRenderer(template)
     node_specs = renderer.translate({})
 
-    assert node_specs[0]["attributes"]["points"] == "10.0,20.0 40.0,20.0"
+    assert node_specs[0]["attributes"]["points"] == "10,20 40,20"
 
 
 def test_validate_data_enforces_object_schema(sample_template):
@@ -449,7 +449,7 @@ def test_render_supports_inline_attribute_expressions():
 
     assert "cx=\"0\"" in markup
     assert "cx=\"10\"" in markup
-    assert "cy=\"40.0\"" in markup
+    assert "cy=\"40\"" in markup
 
 
 def test_custom_renderer_handles_icon_elements(tmp_path):
