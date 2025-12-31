@@ -88,6 +88,17 @@ def test_load_path_returns_renderer(tmp_path):
     }
 
 
+def test_repeat_let_is_parsed(tmp_path):
+    payload = make_template_payload()
+    payload["template"][1]["repeat"]["let"] = {"offset": "__index__ * 2"}
+
+    template = _parse_template(tmp_path / "def.json", payload)
+
+    repeat = template.template[1].repeat
+    assert repeat is not None
+    assert repeat.let["offset"] == "__index__ * 2"
+
+
 def test_load_accepts_file_objects(tmp_path):
     template_path = tmp_path / "def.json"
     template_path.write_text(json.dumps(make_template_payload()), encoding="utf-8")
@@ -143,8 +154,8 @@ def test_parse_template_requires_canvas_dimensions(tmp_path):
             "Repeat 'index' is no longer supported; use __index__ helper variables",
         ),
         (
-            lambda payload: payload["template"][1]["repeat"].update({"let": {}}),
-            "Repeat declarations only accept 'items' and 'as'",
+            lambda payload: payload["template"][1]["repeat"].update({"let": []}),
+            "Repeat 'let' bindings must be declared as a mapping",
         ),
         (lambda payload: payload.update({"styles": {}}), "'styles' is no longer supported"),
         (lambda payload: payload.update({"schema": "oops"}), "'schema' must be declared as a mapping"),
