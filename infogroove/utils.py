@@ -589,19 +589,37 @@ def _resolve_random_source(context: Mapping[str, Any]) -> Any | None:
     existing = context.get("__random__")
     if _is_random_source(existing):
         return existing
+    existing_callable = context.get("__random_callable__")
+    if callable(existing_callable):
+        return existing_callable
     properties = context.get("properties") if "properties" in context else context.get("variables")
     if isinstance(properties, Mapping):
         candidate = properties.get("random")
         if _is_random_source(candidate):
             return candidate
         if "random_seed" in properties:
-            return _seeded_random(context, properties["random_seed"])
+            rng = _seeded_random(context, properties["random_seed"])
+            return _wrap_random_callable(context, rng)
     candidate = context.get("random")
     if _is_random_source(candidate):
         return candidate
     if "random_seed" in context:
-        return _seeded_random(context, context["random_seed"])
+        rng = _seeded_random(context, context["random_seed"])
+        return _wrap_random_callable(context, rng)
     return None
+
+
+class _RandomAdapter:
+    def __init__(self, rng: random.Random) -> None:
+        self._rng = rng
+        self.random = rng.random
+
+
+def _wrap_random_callable(context: Mapping[str, Any], rng: random.Random) -> Any:
+    adapter = _RandomAdapter(rng)
+    if isinstance(context, MutableMapping):
+        context["__random_callable__"] = adapter
+    return adapter
 
 
 def fill_placeholders(
