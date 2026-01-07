@@ -1,3 +1,4 @@
+import ast
 import math
 import random
 
@@ -18,6 +19,7 @@ from infogroove.utils import (
     tokenize_path,
     to_camel_case,
     to_snake_case,
+    unwrap_accessible,
 )
 
 
@@ -34,6 +36,16 @@ def test_sequence_and_mapping_adapters_expose_helpers():
 
     with pytest.raises(AttributeError):
         _ = adapter.missing
+
+
+def test_unwrap_accessible_returns_builtin_types():
+    adapter = ensure_accessible({"items": [{"value": 1}, {"value": 2}]})
+
+    unwrapped = unwrap_accessible(adapter)
+
+    assert isinstance(unwrapped, dict)
+    assert isinstance(unwrapped["items"], list)
+    assert unwrapped["items"][0] == {"value": 1}
 
 
 def test_tokenize_and_resolve_path_supports_indices():
@@ -86,6 +98,14 @@ def test_fill_placeholders_inserts_context_values():
 
     with pytest.raises(FormulaEvaluationError):
         fill_placeholders("{missing.value}", context)
+
+
+def test_fill_placeholders_unwraps_adapter_results():
+    context = {"items": [{"value": 1}, {"value": 2}]}
+
+    rendered = fill_placeholders("{items}", context)
+
+    assert ast.literal_eval(rendered) == [{"value": 1}, {"value": 2}]
 
 
 def test_fill_placeholders_evaluates_inline_expressions():

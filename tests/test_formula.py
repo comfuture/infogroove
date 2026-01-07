@@ -16,6 +16,15 @@ def test_formula_engine_evaluates_with_sympy_numbers():
     assert results == {"double": 6, "offset": 7}
 
 
+def test_evaluate_expression_unwraps_accessible_containers():
+    context = {"items": [{"value": 1}, {"value": 2}]}
+
+    result = evaluate_expression("items", context)
+
+    assert isinstance(result, list)
+    assert result == [{"value": 1}, {"value": 2}]
+
+
 def test_formula_engine_falls_back_to_python_eval(monkeypatch):
     engine = FormulaEngine({"total": "sum(items)"})
 
