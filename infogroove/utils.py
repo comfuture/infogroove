@@ -376,15 +376,27 @@ class _AstEvaluator:
         raise UnsafeExpressionError(f"Unsupported expression node: {type(node).__name__}")
 
 
-def safe_ast_eval(expression: str, context: Mapping[str, Any]) -> Any:
+def safe_ast_eval(
+    expression: str,
+    context: Mapping[str, Any],
+    *,
+    compiled: ast.AST | None = None,
+    identifiers: Sequence[str] | None = None,
+) -> Any:
     """Evaluate a Python-like expression using a restricted AST evaluator."""
 
-    try:
-        tree = ast.parse(expression, mode="eval")
-    except SyntaxError as exc:
-        raise UnsafeExpressionError("Invalid expression syntax") from exc
+    if compiled is None:
+        try:
+            tree = ast.parse(expression, mode="eval")
+        except SyntaxError as exc:
+            raise UnsafeExpressionError("Invalid expression syntax") from exc
+    else:
+        tree = compiled
 
-    safe_locals = default_eval_locals(context, expression=expression)
+    if identifiers is None:
+        safe_locals = default_eval_locals(context, expression=expression)
+    else:
+        safe_locals = default_eval_locals(context, identifiers=identifiers)
     callable_names = {
         name for name in _SAFE_CALLABLE_NAMES if name in safe_locals and callable(safe_locals[name])
     }
@@ -523,7 +535,12 @@ def prepare_expression_for_sympy(expression: str, context: Mapping[str, Any]) ->
     return sanitized, sympy_locals
 
 
-def default_eval_locals(context: Mapping[str, Any], expression: str | None = None) -> dict[str, Any]:
+def default_eval_locals(
+    context: Mapping[str, Any],
+    expression: str | None = None,
+    *,
+    identifiers: Sequence[str] | None = None,
+) -> dict[str, Any]:
     """Build a safe evaluation namespace for Python's :func:`eval`."""
 
     safe_locals: dict[str, Any] = {
@@ -538,7 +555,7 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
         "str": str,
         "range": _range_list,
     }
-    if expression is None:
+    if expression is None and identifiers is None:
         safe_locals.update({key: ensure_accessible(value) for key, value in context.items()})
     safe_locals.setdefault("math", math)
     random_source = _resolve_random_source(context)
@@ -558,8 +575,11 @@ def default_eval_locals(context: Mapping[str, Any], expression: str | None = Non
     if random_source is not None:
         math_namespace["random"] = random_source.random
     safe_locals.setdefault("Math", SimpleNamespace(**math_namespace))
-    if expression:
-        for name in find_identifier_tokens(expression):
+    names = identifiers
+    if names is None and expression:
+        names = find_identifier_tokens(expression)
+    if names:
+        for name in names:
             try:
                 safe_locals[name] = ensure_accessible(context[name])
             except KeyError:
