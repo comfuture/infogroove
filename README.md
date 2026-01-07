@@ -135,8 +135,8 @@ placeholders. For example, `"width": "1 + 2"` stays literal, while
 `"width": "{1 + 2}"` evaluates to `3`.
 
 Expressions are evaluated by `sympy` first and then a restricted AST fallback.
-Only a safe subset of Python is permitted; see `docs/SPEC.md` for the exact
-rules and allowed helpers.
+Only a safe subset of Python is permitted; see the template spec for the exact
+rules and allowed helpers: [docs/SPEC.md](docs/SPEC.md).
 
 Identifiers are resolved exactly as written. Prefer a consistent casing
 convention within datasets and templates to avoid ambiguity.
