@@ -74,14 +74,17 @@ def ensure_accessible(value: Any) -> Any:
     return value
 
 
-def _unwrap_accessible(value: Any) -> Any:
+def unwrap_accessible(value: Any) -> Any:
     """Convert Mapping/Sequence adapters back to built-in container types."""
 
     if isinstance(value, MappingAdapter):
-        return {key: _unwrap_accessible(value[key]) for key in value}
+        return {key: unwrap_accessible(value[key]) for key in value}
     if isinstance(value, SequenceAdapter):
-        return [_unwrap_accessible(item) for item in value]
+        return [unwrap_accessible(item) for item in value]
     return value
+
+
+_unwrap_accessible = unwrap_accessible
 
 
 def stringify(value: Any) -> str:

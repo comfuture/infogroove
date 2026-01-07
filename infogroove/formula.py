@@ -16,11 +16,11 @@ from sympy.core.sympify import SympifyError
 from .exceptions import FormulaEvaluationError
 from .utils import (
     UnsafeExpressionError,
-    _unwrap_accessible,
     find_dotted_tokens,
     find_identifier_tokens,
     resolve_path,
     safe_ast_eval,
+    unwrap_accessible,
 )
 
 _EXPRESSION_CACHE_SIZE = 1024
@@ -186,7 +186,7 @@ def _coerce_integral(value: Any) -> Any:
 
 
 def _normalise_value(value: Any) -> Any:
-    value = _unwrap_accessible(value)
+    value = unwrap_accessible(value)
     if isinstance(value, Mapping):
         return {key: _normalise_value(sub) for key, sub in value.items()}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
