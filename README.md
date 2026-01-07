@@ -84,6 +84,14 @@ Each element may declare its own `let` block. These bindings evaluate against
 the current context (including repeat helpers) and the results become available
 to the element's attributes and its children.
 
+Evaluation rules for `let` bindings:
+
+- If the string contains `{...}` placeholders, placeholder expansion is used.
+- If the string is exactly one placeholder (for example `"{value}"`), the raw
+  expression result is returned (number, list, object, etc.).
+- Otherwise the string is treated as a full expression and evaluated.
+- To force a literal string, wrap it in quotes (for example `"'blue'"`).
+
 The `repeat` block explicitly controls iteration:
 
 ```json
@@ -106,7 +114,7 @@ The `repeat` block explicitly controls iteration:
 ```
 
 - `items` references the collection to iterate (any dotted path resolved via
-  the current context).
+  the current context, such as `items` or `items[0].points`).
 - `as` names the current element. Use the reserved helpers (e.g. `__index__`,
   `__count__`) inside expressions when you need positional data; when the
   iterated item is a mapping, those helpers are also exposed on the alias (for
@@ -120,10 +128,15 @@ The `repeat` block explicitly controls iteration:
 During iteration, Infogroove also injects reserved helpers such as `__index__`,
 `__first__`, `__last__`, `__count__`, and `__total__` for convenience.
 
-Placeholder syntax supports both `{path.to.value}` lookups and inline Python
-expressions such as `{__index__ * 10}` or `{canvas.width / 2}`. Expressions are
-evaluated inside the same safe context as loop bindings (global properties,
-data fields, derived metrics, and loop-scoped bindings).
+Placeholder syntax supports both `{path.to.value}` lookups and inline
+expressions such as `{__index__ * 10}` or `{canvas.width / 2}`. Attribute and
+text values are always strings, so expressions only run inside `{...}`
+placeholders. For example, `"width": "1 + 2"` stays literal, while
+`"width": "{1 + 2}"` evaluates to `3`.
+
+Expressions are evaluated by `sympy` first and then a restricted AST fallback.
+Only a safe subset of Python is permitted; see `docs/SPEC.md` for the exact
+rules and allowed helpers.
 
 Identifiers are resolved exactly as written. Prefer a consistent casing
 convention within datasets and templates to avoid ambiguity.
