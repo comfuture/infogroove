@@ -22,6 +22,18 @@ uv run infogroove -f examples/arc-circles/def.json -i examples/arc-circles/data.
 uv run infogroove -f examples/staggered-keywords/def.json -i examples/staggered-keywords/data.json -o examples/staggered-keywords/staggered-keywords.svg
 ```
 
+Render instantly with uvx (no local install required):
+
+```bash
+uvx infogroove -f /path/to/def.json -i /path/to/data.json -o /path/to/output.svg
+```
+
+Omit `-o` to print the SVG to stdout:
+
+```bash
+uvx infogroove -f /path/to/def.json -i /path/to/data.json > output.svg
+```
+
 ## Running Tests
 
 Install development dependencies and execute the test suite with pytest:
@@ -155,7 +167,7 @@ Key flags:
 
 - `-f, --template`: Path to the template definition JSON file (e.g. `def.json`).
 - `-i, --input`: JSON file containing an array of data objects.
-- `-o, --output`: Destination SVG path or `-` for stdout.
+- `-o, --output`: Destination SVG path or `-` for stdout (default: `-`).
 
 ## Programmatic Usage
 
