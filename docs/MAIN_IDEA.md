@@ -163,10 +163,10 @@ materialisation raise domain-specific exceptions (`TemplateError`,
 ## CLI
 
 The `infogroove` CLI accepts `-f/--template`, `-i/--input`, and `-o/--output`.
-Passing `-` as the output path streams SVG to stdout, which is useful for
-tooling pipelines. Add `--raw` to emit the translated node specification as
-JSON instead of rendering SVG—handy for offline inspection, snapshot testing,
-or delegating the final rendering step to another system.
+Omit `-o` (or pass `-`) to stream SVG to stdout, which is useful for tooling
+pipelines. Add `--raw` to emit the translated node specification as JSON
+instead of rendering SVG—handy for offline inspection, snapshot testing, or
+delegating the final rendering step to another system.
 
 ## Summary
 

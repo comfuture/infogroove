@@ -47,8 +47,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-o",
         "--output",
-        required=True,
-        help="Destination SVG file path or '-' for stdout",
+        default="-",
+        help="Destination SVG file path or '-' for stdout (default: -)",
     )
     parser.add_argument(
         "--raw",

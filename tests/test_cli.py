@@ -66,6 +66,35 @@ def test_main_renders_svg_end_to_end(tmp_path):
     assert "svg" in rendered
 
 
+def test_main_defaults_to_stdout_when_output_missing(tmp_path, capsys):
+    template_path = tmp_path / "def.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "properties": {"canvas": {"width": 120, "height": 40}},
+                "template": [
+                    {
+                        "type": "text",
+                        "attributes": {"x": "0", "y": "0"},
+                        "text": "{item.label}",
+                        "repeat": {"items": "data", "as": "item"},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    data_path = tmp_path / "data.json"
+    data_path.write_text(json.dumps([{"label": "Stdout"}]), encoding="utf-8")
+
+    exit_code = main(["-f", str(template_path), "-i", str(data_path)])
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "Stdout" in captured.out
+    assert "svg" in captured.out
+
+
 @pytest.mark.parametrize(
     "payload",
     [
