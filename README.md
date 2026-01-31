@@ -224,3 +224,19 @@ svg_inline = infographic.render([{}] * 10)
   However, circular definitions (e.g. `total: "max"`, `max: "total"`) will be
   rejected with a clear error. Break cycles by lifting shared calculations into
   a new binding or restructuring the dependency chain.
+
+## Agent Skills (Claude, Codex, Gemini)
+
+This repository includes an Agent Skills package at `skills/create-infogroove` and a
+pre-built archive at `skills/create-infogroove.skill`.
+
+Most Agent Skills-compatible assistants (Claude, Codex, Gemini, etc.) support one of
+these installation modes:
+
+- **Import the archive**: use the agent's Skills/Extensions UI or CLI to import
+  `skills/create-infogroove.skill`.
+- **Register the folder**: point the agent's skills path to `./skills` or copy
+  `skills/create-infogroove` into the agent's configured skills directory.
+
+After installation, ask the agent to create or update an infographic; it will generate
+`def.json`, `data.json`, and a rendered SVG under `./infographics/<name>/` by default.
