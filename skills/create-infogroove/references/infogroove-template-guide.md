@@ -29,7 +29,7 @@ The CLI accepts either:
 1) A JSON array of objects
 2) An object with an `items` array
 
-When rendering via the CLI, data is normalized to a list before validation.\n+If you need schema validation in the CLI, prefer an array-shaped schema (or omit\n+`schema` and validate externally).
+When rendering via the CLI, data is normalized to a list before validation. If you need schema validation in the CLI, prefer an array-shaped schema (or omit `schema` and validate externally).
 
 ## Repeat + let
 
