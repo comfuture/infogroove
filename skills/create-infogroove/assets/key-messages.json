@@ -1,0 +1,282 @@
+{
+  "name": "Key Messages",
+  "description": "Highlights a primary message above supporting messages.",
+  "properties": {
+    "canvas": {
+      "width": 1024,
+      "height": 576
+    },
+    "margin": 48,
+    "gap": 32,
+    "background": "#120613",
+    "card_radius": 28,
+    "font_family": "'Inter', 'Pretendard', Arial, sans-serif",
+    "lead_gradient_start": "#ff2d95",
+    "lead_gradient_end": "#b5147a",
+    "card_gradient_start": "#ff9ad1",
+    "card_gradient_end": "#ff68b3",
+    "lead_text_color": "#fff5fc",
+    "secondary_text_color": "#250014",
+    "lead_title_size": 48,
+    "lead_subtitle_size": 26,
+    "card_title_size": 24,
+    "card_subtitle_size": 18
+  },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Key message payload",
+    "description": "Top-level payload containing a featured message followed by supporting cards.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "subtitle"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Hero or supporting message headline."
+            },
+            "subtitle": {
+              "type": "string",
+              "description": "Secondary copy displayed beneath the title."
+            }
+          }
+        }
+      },
+      "items2": {
+        "type": "array",
+        "description": "Optional secondary messages used by downstream agents.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "subtitle": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "template": [
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{background}"
+      }
+    },
+    {
+      "type": "defs",
+      "children": [
+        {
+          "type": "linearGradient",
+          "attributes": {
+            "id": "leadGradient",
+            "x1": "0%",
+            "y1": "0%",
+            "x2": "0%",
+            "y2": "100%"
+          },
+          "children": [
+            {
+              "type": "stop",
+              "attributes": {
+                "offset": "0%",
+                "stopColor": "{lead_gradient_start}"
+              }
+            },
+            {
+              "type": "stop",
+              "attributes": {
+                "offset": "100%",
+                "stopColor": "{lead_gradient_end}"
+              }
+            }
+          ]
+        },
+        {
+          "type": "linearGradient",
+          "attributes": {
+            "id": "cardGradient",
+            "x1": "0%",
+            "y1": "0%",
+            "x2": "0%",
+            "y2": "100%"
+          },
+          "children": [
+            {
+              "type": "stop",
+              "attributes": {
+                "offset": "0%",
+                "stopColor": "{card_gradient_start}"
+              }
+            },
+            {
+              "type": "stop",
+              "attributes": {
+                "offset": "100%",
+                "stopColor": "{card_gradient_end}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry"
+      },
+      "let": {
+        "title": "entry.title",
+        "subtitle": "entry.subtitle",
+        "half_height": "canvas.height / 2",
+        "section_gap": "gap",
+        "lead_width": "canvas.width - margin * 2",
+        "lead_x": "margin",
+        "lead_y": "margin",
+        "lead_height": "half_height - margin - section_gap / 2",
+        "lead_display": "'inline' if __first__ else 'none'",
+        "non_lead_display": "'inline' if not __first__ else 'none'",
+        "bottom_y": "half_height + section_gap / 2",
+        "bottom_height": "canvas.height - bottom_y - margin",
+        "non_lead_count": "max(__total__ - 1, 1)",
+        "non_lead_index": "max(__index__ - 1, 0)",
+        "card_width": "((canvas.width - margin * 2) - gap * (non_lead_count - 1)) / non_lead_count if __index__ > 0 else 0",
+        "card_height": "bottom_height",
+        "card_x": "margin + non_lead_index * (card_width + gap)",
+        "card_y": "bottom_y",
+        "lead_title_x": "lead_x + 40",
+        "lead_title_y": "lead_y + 110",
+        "lead_subtitle_y": "lead_y + 148",
+        "card_title_x": "card_x + 28",
+        "card_title_y": "card_y + 82",
+        "card_subtitle_y": "card_y + 132",
+        "subtitle_clip_id": "keyMsgClip_{__index__}",
+        "subtitle_clip_x": "lead_title_x if __first__ else card_title_x",
+        "subtitle_clip_y": "lead_subtitle_y - 4 if __first__ else card_subtitle_y - 4",
+        "subtitle_clip_width": "(lead_width - 88) if __first__ else max(card_width - 56, 0)",
+        "subtitle_clip_height": "(lead_height - 120) if __first__ else max(card_height - 140, 0)"
+      },
+      "children": [
+        {
+          "type": "defs",
+          "children": [
+            {
+              "type": "clipPath",
+              "attributes": {
+                "id": "{subtitle_clip_id}"
+              },
+              "children": [
+                {
+                  "type": "rect",
+                  "attributes": {
+                    "x": "{subtitle_clip_x}",
+                    "y": "{subtitle_clip_y}",
+                    "width": "{subtitle_clip_width}",
+                    "height": "{subtitle_clip_height}"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{lead_x}",
+            "y": "{lead_y}",
+            "width": "{lead_width}",
+            "height": "{lead_height}",
+            "rx": "{card_radius}",
+            "fill": "url(#leadGradient)",
+            "display": "{lead_display}"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{lead_title_x}",
+            "y": "{lead_title_y}",
+            "fill": "{lead_text_color}",
+            "fontSize": "{lead_title_size}",
+            "fontFamily": "{font_family}",
+            "fontWeight": "700",
+            "display": "{lead_display}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{title}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{lead_title_x}",
+            "y": "{lead_subtitle_y}",
+            "fill": "{lead_text_color}",
+            "fontSize": "{lead_subtitle_size}",
+            "fontFamily": "{font_family}",
+            "dominantBaseline": "hanging",
+            "display": "{lead_display}",
+            "clip-path": "url(#{subtitle_clip_id})"
+          },
+          "text": "{subtitle}"
+        },
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{card_x}",
+            "y": "{card_y}",
+            "width": "{card_width}",
+            "height": "{card_height}",
+            "rx": "{card_radius}",
+            "fill": "url(#cardGradient)",
+            "display": "{non_lead_display}"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{card_title_x}",
+            "y": "{card_title_y}",
+            "fill": "{secondary_text_color}",
+            "fontSize": "{card_title_size}",
+            "fontFamily": "{font_family}",
+            "fontWeight": "600",
+            "display": "{non_lead_display}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{title}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{card_title_x}",
+            "y": "{card_subtitle_y}",
+            "fill": "{secondary_text_color}",
+            "fontSize": "{card_subtitle_size}",
+            "fontFamily": "{font_family}",
+            "dominantBaseline": "hanging",
+            "display": "{non_lead_display}",
+            "clip-path": "url(#{subtitle_clip_id})"
+          },
+          "text": "{subtitle}"
+        }
+      ]
+    }
+  ]
+}

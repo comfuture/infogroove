@@ -1,0 +1,175 @@
+{
+  "name": "Stat Cards",
+  "description": "Displays KPI cards with coloured accents.",
+  "properties": {
+    "canvas": {
+      "width": 1024,
+      "height": 600
+    },
+    "margin": 48,
+    "card_width": 280,
+    "card_height": 140,
+    "card_gap": 24,
+    "background": "#0f172a",
+    "card_background": "#1e293b",
+    "title_color": "#e2e8f0",
+    "value_color": "#f8fafc",
+    "delta_color": "#94a3b8",
+    "font_family": "Inter, Arial, sans-serif",
+    "accent_colors": [
+      "#38bdf8",
+      "#34d399",
+      "#f97316",
+      "#a855f7"
+    ]
+  },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "Stat card payload",
+    "description": "Top-level payload containing card entries and optional comparative data.",
+    "required": [
+      "items"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 8,
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "value",
+            "delta"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Short KPI name displayed at the top of the card."
+            },
+            "value": {
+              "type": ["number", "string"],
+              "description": "Primary metric shown prominently in the card."
+            },
+            "delta": {
+              "type": "string",
+              "description": "Context or change indicator rendered beneath the value."
+            }
+          }
+        }
+      },
+      "items2": {
+        "type": "array",
+        "description": "Optional comparative series for downstream analysis.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "value": {"type": ["number", "string"]},
+            "delta": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "template": [
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{background}"
+      }
+    },
+    {
+      "type": "g",
+      "repeat": {
+        "items": "items",
+        "as": "entry"
+      },
+      "let": {
+        "title": "entry.title",
+        "value": "entry.value",
+        "delta": "entry.delta",
+        "cards_per_row": "max(1, min(__total__, 3))",
+        "row": "__index__ // cards_per_row",
+        "column": "__index__ % cards_per_row",
+        "card_x": "margin + column * (card_width + card_gap)",
+        "card_y": "margin + row * (card_height + card_gap)",
+        "accent_color": "accent_colors[__index__ % accent_colors.length]",
+        "title_x": "card_x + 20",
+        "title_y": "card_y + 36",
+        "value_x": "card_x + 20",
+        "value_y": "card_y + 82",
+        "delta_x": "card_x + 20",
+        "delta_y": "card_y + 112"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{card_x}",
+            "y": "{card_y}",
+            "width": "{card_width}",
+            "height": "{card_height}",
+            "fill": "{card_background}",
+            "rx": "20"
+          }
+        },
+        {
+          "type": "rect",
+          "attributes": {
+            "x": "{card_x}",
+            "y": "{card_y}",
+            "width": "6",
+            "height": "{card_height}",
+            "fill": "{accent_color}",
+            "rx": "6"
+          }
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{title_x}",
+            "y": "{title_y}",
+            "fill": "{title_color}",
+            "fontSize": "18",
+            "fontFamily": "{font_family}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{title}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{value_x}",
+            "y": "{value_y}",
+            "fill": "{value_color}",
+            "fontSize": "40",
+            "fontFamily": "{font_family}",
+            "fontWeight": "700",
+            "dominantBaseline": "middle"
+          },
+          "text": "{value}"
+        },
+        {
+          "type": "text",
+          "attributes": {
+            "x": "{delta_x}",
+            "y": "{delta_y}",
+            "fill": "{delta_color}",
+            "fontSize": "16",
+            "fontFamily": "{font_family}",
+            "dominantBaseline": "middle"
+          },
+          "text": "{delta}"
+        }
+      ]
+    }
+  ]
+}
