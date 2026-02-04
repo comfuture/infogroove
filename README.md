@@ -34,6 +34,14 @@ Omit `-o` to print the SVG to stdout:
 uvx infogroove -f /path/to/def.json -i /path/to/data.json > output.svg
 ```
 
+## Codex Skill
+
+Install the Infogroove Codex skill:
+
+```bash
+$skill-installer install https://github.com/comfuture/infogroove/tree/main/skills/create-infogroove
+```
+
 ## Running Tests
 
 Install development dependencies and execute the test suite with pytest:

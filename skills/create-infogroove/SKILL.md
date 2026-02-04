@@ -64,6 +64,14 @@ skills/create-infogroove/scripts/render_infogroove.py \
 - Tighten layout, spacing, and colors as needed.
 - Update `schema` when data shape changes.
 
+## Prerequisites
+
+The rendering script uses `uvx`. If the target system does not have Python or
+uv installed, install them first:
+
+- Python: https://docs.astral.sh/uv/guides/install-python/
+- uv: https://docs.astral.sh/uv/getting-started/installation/
+
 ## Resources
 
 ### scripts/
@@ -73,3 +81,11 @@ skills/create-infogroove/scripts/render_infogroove.py \
 ### references/
 
 - `infogroove-template-guide.md`: Quick reference for the template spec, data shapes, and examples.
+
+### assets/
+
+Example template definitions copied from the repo examples for quick starting points:
+
+- [`blue-parallelograms.json`](assets/blue-parallelograms.json)
+- [`key-messages.json`](assets/key-messages.json)
+- [`stat-cards.json`](assets/stat-cards.json)
