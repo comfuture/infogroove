@@ -16,6 +16,7 @@ Create or modify Infogroove template definitions (`def.json`) and data payloads 
 - Identify the infographic intent (chart type, layout, tone, colors).
 - Capture the data fields and expected data shape (array of objects or `{ "items": [...] }`).
 - Confirm canvas size and any typography or palette constraints.
+- Identify which visual attributes should remain user-customizable (for example background, fills, strokes, text colors, and emphasis colors).
 
 ### 2) Decide output location
 
@@ -33,9 +34,19 @@ Target files:
 
 - Use the template structure from `references/infogroove-template-guide.md`.
 - Always include `properties.canvas.width` and `properties.canvas.height`.
+- Treat `properties.canvas` as mandatory and strict:
+  - `width` and `height` must be finite positive numbers.
+  - Prefer integer values and avoid `0`, negative values, `null`, or strings.
+- Compute geometry from the canvas whenever possible:
+  - Prefer expressions like `{canvas.width * 0.5}` or `{min(canvas.width, canvas.height) * 0.35}`.
+  - Avoid hard-coded absolute geometry in element attributes when a relative value can be used.
+  - Move reusable layout constants to named `properties` keys (for example `outerMarginRatio`, `cardGapRatio`), then derive final pixels in `let`.
+- Keep style attributes data-driven:
+  - Avoid hard-coded `fill`, `stroke`, `strokeWidth`, `fontSize`, and similar values directly in template attributes.
+  - Define these as semantically named properties (for example `mainBgColor`, `subBgColor`, `fillColors`, `axisStrokeColor`) and reference them in template placeholders.
 - Add a `schema` that matches the intended input data.
 - Use `repeat` + `let` to keep element definitions compact.
- - When rendering via the CLI, prefer array-shaped schemas (or omit `schema`) because input is normalized to a list.
+- When rendering via the CLI, prefer array-shaped schemas (or omit `schema`) because input is normalized to a list.
 
 If editing an existing template, keep prior keys unless the user requests a redesign.
 
@@ -61,6 +72,10 @@ skills/create-infogroove/scripts/render_infogroove.py \
 ### 6) Validate and iterate
 
 - Ensure the SVG renders and visually matches intent.
+- Confirm strict template requirements are still met:
+  - `properties.canvas.width` and `properties.canvas.height` exist and are valid numbers.
+  - Element geometry is primarily derived from canvas-based expressions.
+  - Customizable style values are defined in `properties` and referenced from `template`.
 - Tighten layout, spacing, and colors as needed.
 - Update `schema` when data shape changes.
 
@@ -80,7 +95,7 @@ uv installed, install them first:
 
 ### references/
 
-- `infogroove-template-guide.md`: Quick reference for the template spec, data shapes, and examples.
+- `infogroove-template-guide.md`: Strict authoring guide for required canvas settings, relative geometry patterns, style-token conventions, and examples.
 
 ### assets/
 
