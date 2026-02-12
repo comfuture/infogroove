@@ -1,26 +1,148 @@
-# Infogroove Template Quick Guide
+# Infogroove Template Guide (Strict Mode)
 
-Use this as a fast reference when authoring `def.json` and `data.json`.
+Use this guide when authoring `def.json` and `data.json` with strict, reusable template rules.
 
-## Template skeleton
+## Required template skeleton
 
 ```json
 {
   "name": "Title",
   "description": "Short summary",
   "properties": {
-    "canvas": { "width": 960, "height": 540 },
-    "font_family": "Inter, Arial, sans-serif",
-    "palette": ["#111827", "#2563eb"]
+    "canvas": { "width": 1000, "height": 500 },
+    "fontFamily": "Inter, Arial, sans-serif"
   },
   "schema": { "$schema": "https://json-schema.org/draft/2020-12/schema" },
   "template": []
 }
 ```
 
-- `properties.canvas.width/height` must be numbers.
-- Other `properties` become template variables.
-- `schema` is optional but recommended for data validation.
+## Strict authoring rules
+
+1) `properties.canvas` is mandatory.
+2) `properties.canvas.width` and `properties.canvas.height` must be finite positive numbers.
+3) Prefer integer width/height values.
+4) Avoid hard-coded geometry in `template` attributes when values can be derived from the canvas.
+5) Move customizable visual values (for example `fill`, `stroke`, `strokeWidth`, text color, font sizes) into `properties` with semantic names.
+
+## Canvas validation checklist
+
+- Good: `"canvas": { "width": 1000, "height": 500 }`
+- Bad: missing `canvas`
+- Bad: `"width": "1000"` (string)
+- Bad: `"height": 0` or negative numbers
+
+## Relative geometry pattern
+
+Prefer ratios in `properties`, then compute final geometry in `let`:
+
+```json
+{
+  "properties": {
+    "canvas": { "width": 1000, "height": 500 },
+    "outerMarginRatio": 0.08,
+    "ringRadiusRatio": 0.35
+  },
+  "template": [
+    {
+      "type": "circle",
+      "let": {
+        "centerX": "canvas.width / 2",
+        "centerY": "canvas.height / 2",
+        "radius": "min(canvas.width, canvas.height) * ringRadiusRatio"
+      },
+      "attributes": {
+        "cx": "{centerX}",
+        "cy": "{centerY}",
+        "r": "{radius}"
+      }
+    }
+  ]
+}
+```
+
+## Style-token pattern (recommended)
+
+Define style tokens in `properties` and reference them from `template`:
+
+```json
+{
+  "properties": {
+    "canvas": { "width": 1000, "height": 500 },
+    "mainBgColor": "#0f172a",
+    "subBgColor": "#1e293b",
+    "fillColors": ["#38bdf8", "#34d399", "#f97316"],
+    "labelColor": "#e2e8f0",
+    "borderStrokeColor": "#94a3b8",
+    "borderStrokeWidth": 2
+  },
+  "template": [
+    {
+      "type": "rect",
+      "attributes": {
+        "x": "0",
+        "y": "0",
+        "width": "100%",
+        "height": "100%",
+        "fill": "{mainBgColor}"
+      }
+    },
+    {
+      "type": "circle",
+      "let": {
+        "cx": "canvas.width / 2",
+        "cy": "canvas.height / 2",
+        "r": "min(canvas.width, canvas.height) * 0.3"
+      },
+      "attributes": {
+        "cx": "{cx}",
+        "cy": "{cy}",
+        "r": "{r}",
+        "fill": "{subBgColor}",
+        "stroke": "{borderStrokeColor}",
+        "strokeWidth": "{borderStrokeWidth}"
+      }
+    }
+  ]
+}
+```
+
+## Bad vs good (quick comparison)
+
+Bad (hard-coded geometry and styles):
+
+```json
+{
+  "type": "circle",
+  "attributes": {
+    "cx": "500",
+    "cy": "250",
+    "r": "180",
+    "fill": "#1e293b",
+    "stroke": "#94a3b8"
+  }
+}
+```
+
+Good (canvas-relative + property-driven):
+
+```json
+{
+  "type": "circle",
+  "let": {
+    "cx": "canvas.width / 2",
+    "cy": "canvas.height / 2",
+    "r": "min(canvas.width, canvas.height) * ringRadiusRatio"
+  },
+  "attributes": {
+    "cx": "{cx}",
+    "cy": "{cy}",
+    "r": "{r}",
+    "fill": "{subBgColor}",
+    "stroke": "{borderStrokeColor}"
+  }
+}
+```
 
 ## Data shape
 
@@ -39,9 +161,9 @@ When rendering via the CLI, data is normalized to a list before validation. If y
   "repeat": { "items": "items", "as": "row" },
   "let": {
     "label": "row.label",
-    "y": "margin + __index__ * 24"
+    "y": "canvas.height * 0.15 + __index__ * (canvas.height * 0.08)"
   },
-  "attributes": { "x": "{margin}", "y": "{y}" },
+  "attributes": { "x": "{canvas.width * 0.1}", "y": "{y}", "fill": "{labelColor}" },
   "text": "{label}"
 }
 ```
@@ -54,7 +176,7 @@ When rendering via the CLI, data is normalized to a list before validation. If y
 
 - Use `{...}` inside strings for expressions: `{canvas.width / 2}`.
 - In `let`, a single placeholder string returns raw values (numbers, lists, dicts).
-- In `attributes`/`text`, placeholder results become strings.
+- In `attributes` and `text`, placeholder results become strings.
 
 ## Common element types
 
